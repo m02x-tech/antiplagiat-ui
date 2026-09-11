@@ -17,6 +17,8 @@
        journal and re-index are a fourth source, and it is the one page
        where the programme tabs would mean nothing. #}
     <nav class="sections">
+      <div class="brand"><div class="logo">◈</div><div class="brand-name">DevProgData<small>ПОРТФЕЛЬ НАУЧНЫХ ПРОГРАММ</small></div></div>
+      <div class="navlabel">РАЗДЕЛЫ</div>
       <a class="section {{ 'active' if section == 'sitcentre' else '' }}"
          href="/sitcentre">Ситуационный центр</a>
       <a class="section {{ 'active' if section == 'programs' and active_tab != 'admin' else '' }}"
@@ -39,6 +41,7 @@
     <div class="pane">
       {% if section == 'programs' and active_tab != 'admin' %}
       <header class="topbar">
+        <div class="crumb">Программы развития &nbsp; / &nbsp; <b>{{ {'tree': 'Структура программы', 'program': 'Программа', 'search': 'Семантический поиск', 'indicators': 'Показатели и индикаторы'}.get(active_tab, program.title) }}</b></div>
         <div class="topbar-row">
           <nav class="tabs">
             <a class="tab {{ 'active' if active_tab == 'tree' else '' }}" href="/{{ program.slug }}/tree">Структура программы</a>
@@ -57,9 +60,9 @@
         </div>
       </header>
       {% endif %}
-      {# content-bare drops the padding for the two sections that fill the
-         pane with an iframe; the admin page is ordinary content. #}
-      <main class="content {{ 'content-bare' if section in ('sitcentre', 'antiplagiat') else '' }}">
+      {# content-bare drops the padding for the iframe section; antiplagiat
+         uses the ordinary padded content like every other page. #}
+      <main class="content {{ 'content-bare' if section == 'sitcentre' else '' }}">
         {% block content %}{% endblock %}
       </main>
     </div>
