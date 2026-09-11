@@ -49,12 +49,11 @@
     <div class="pane">
       {% if section == 'programs' and active_tab != 'admin' %}
       <header class="topbar">
-        <div class="crumb"><button type="button" class="menu-toggle" id="menu-toggle" aria-label="Меню разделов">☰</button>Программы развития &nbsp; / &nbsp; <b>{{ {'tree': 'Структура программы', 'program': 'Программа', 'search': 'Семантический поиск', 'indicators': 'Показатели и индикаторы'}.get(active_tab, program.title) }}</b></div>
+        <div class="crumb"><button type="button" class="menu-toggle" aria-label="Меню разделов">☰</button>Программы развития &nbsp; / &nbsp; <b>{{ {'tree': 'Структура программы', 'program': 'Программа', 'indicators': 'Показатели и индикаторы'}.get(active_tab, program.title) }}</b></div>
         <div class="topbar-row">
           <nav class="tabs">
             <a class="tab {{ 'active' if active_tab == 'tree' else '' }}" href="/{{ program.slug }}/tree">Структура программы</a>
             <a class="tab {{ 'active' if active_tab == 'program' else '' }}" href="/{{ program.slug }}/program">Программа</a>
-            <a class="tab {{ 'active' if active_tab == 'search' else '' }}" href="/{{ program.slug }}/search">Семантический поиск</a>
             <a class="tab {{ 'active' if active_tab == 'indicators' else '' }}" href="/{{ program.slug }}/indicators">Показатели и индикаторы</a>
           </nav>
           <form class="program-switch" method="get" action="#" onsubmit="return false;">
@@ -62,6 +61,42 @@
             <select id="program-select" onchange="location.href = '/' + this.value + '/{{ active_tab }}';">
               {% for p in programs %}
               <option value="{{ p.slug }}" {{ 'selected' if p.slug == program.slug else '' }}>{{ p.title }}</option>
+              {% endfor %}
+            </select>
+          </form>
+        </div>
+      </header>
+      {% endif %}
+      {# «Карты смыслов»: две вкладки об одном и том же корпусе — что в нём
+         совпадает (антиплагиат) и что в нём найдётся (поиск). Переключатель
+         программ стоит справа, как в «Программах развития»: одно и то же
+         действие не должно жить в двух разных местах интерфейса.
+
+         Ссылки у вкладок разной формы, поэтому и переключатель строит адрес
+         по-разному: антиплагиат выбирает программу параметром запроса, поиск —
+         первым сегментом пути. Адреса оставлены прежними намеренно, чтобы
+         переезд вкладки не ломал ссылки и закладки. #}
+      {% if section == 'antiplagiat' %}
+      <header class="topbar">
+        <div class="crumb"><button type="button" class="menu-toggle" aria-label="Меню разделов">☰</button>Карты смыслов &nbsp; / &nbsp; <b>{{ 'Семантический поиск' if active_tab == 'search' else 'Антиплагиат' }}</b></div>
+        <div class="topbar-row">
+          <nav class="tabs">
+            <a class="tab {{ '' if active_tab == 'search' else 'active' }}" href="/antiplagiat?program={{ program.slug if program else 'ntic' }}">Антиплагиат</a>
+            <a class="tab {{ 'active' if active_tab == 'search' else '' }}" href="/{{ program.slug if program else 'ntic' }}/search">Семантический поиск</a>
+          </nav>
+          <form class="program-switch" method="get" action="#" onsubmit="return false;">
+            <label for="program-select-maps">Программа</label>
+            {# Две явные ветки вместо выражения Jinja внутри JS: там кавычки
+               уходят в &#39;, браузер их, конечно, раскодирует, но код,
+               который читается только после декодирования, чинить потом
+               неприятно. #}
+            {% if active_tab == 'search' %}
+            <select id="program-select-maps" onchange="location.href = '/' + this.value + '/search';">
+            {% else %}
+            <select id="program-select-maps" onchange="location.href = '/antiplagiat?program=' + this.value;">
+            {% endif %}
+              {% for p in programs %}
+              <option value="{{ p.slug }}" {{ 'selected' if program and p.slug == program.slug else '' }}>{{ p.title }}</option>
               {% endfor %}
             </select>
           </form>
@@ -94,12 +129,18 @@
     (function(){
       var nav = document.getElementById('sections-nav');
       var overlay = document.getElementById('sidebar-overlay');
-      var toggle = document.getElementById('menu-toggle');
+      // По классу, а не по id: шапок в приложении три - «Программы
+      // развития», «Карты смыслов» и своя у вкладки антиплагиата, - а id
+      // в документе может быть только один. Поиск по id находил кнопку
+      // лишь в одной из шапок, в остальных ☰ молча не работал.
+      var toggles = document.querySelectorAll('.menu-toggle');
       if (!nav || !overlay) return;
       function open(){ document.body.classList.add('nav-open'); }
       function close(){ document.body.classList.remove('nav-open'); }
-      if (toggle) toggle.addEventListener('click', function(){
-        document.body.classList.contains('nav-open') ? close() : open();
+      toggles.forEach(function(toggle){
+        toggle.addEventListener('click', function(){
+          document.body.classList.contains('nav-open') ? close() : open();
+        });
       });
       overlay.addEventListener('click', close);
       document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });

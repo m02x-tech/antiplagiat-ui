@@ -196,7 +196,9 @@ def indicators_edit(request: Request, slug: str, key: str = "Демо|Показ
 
 @app.get("/{slug}/search", response_class=HTMLResponse)
 def search(request: Request, slug: str, q: str = ""):
+    # Поиск живёт в «Картах смыслов», а не в «Программах развития».
     context = _tab_context(request, slug, "search")
+    context["section"] = context["active_section"] = "antiplagiat"
     context["query"] = q
     context["results"] = ft.search_results(q)
     context["query_id"] = "demo-query"

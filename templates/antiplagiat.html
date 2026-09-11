@@ -5,17 +5,11 @@
 {% if message %}<p class="flash-ok">{{ message }}</p>{% endif %}
 {% if error %}<p class="error">{{ error }}</p>{% endif %}
 
+{# Крошка и выбор программы переехали в общую шапку раздела (base.html):
+   одно и то же действие не должно жить в двух местах одной страницы.
+   Здесь остаются только те переключатели, которые есть лишь тут. #}
 <div class="antiplagiat-topbar">
-  <div class="crumb"><button type="button" class="menu-toggle" id="menu-toggle" aria-label="Меню разделов">☰</button>Карты смыслов</div>
   <div class="antiplagiat-controls">
-    <label>Программа:
-      <select onchange="location.href = '/antiplagiat?program=' + this.value + '&variant={{ variant }}&cutoff={{ cutoff }}';">
-        {% for p in programs %}
-        <option value="{{ p.slug }}" {{ 'selected' if p.slug == program.slug else '' }}>{{ p.title }}</option>
-        {% endfor %}
-      </select>
-    </label>
-
     <label>Вариант расчёта:
       <select onchange="location.href = '/antiplagiat?program={{ program.slug }}&variant=' + this.value + '&cutoff={{ cutoff }}';">
         <option value="default" {{ 'selected' if variant == 'default' else '' }}>Базовый (глушение внутри проекта)</option>
