@@ -19,7 +19,8 @@
        «Администрирование» joins them for an admin: the server's own
        journal and re-index are a fourth source, and it is the one page
        where the programme tabs would mean nothing. #}
-    <nav class="sections">
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
+    <nav class="sections" id="sections-nav">
       <div class="brand"><div class="logo">◈</div><div class="brand-name">DevProgData<small>ПОРТФЕЛЬ НАУЧНЫХ ПРОГРАММ</small></div></div>
       <div class="navlabel">РАЗДЕЛЫ</div>
       <a class="section {{ 'active' if section == 'sitcentre' else '' }}"
@@ -45,7 +46,7 @@
     <div class="pane">
       {% if section == 'programs' and active_tab != 'admin' %}
       <header class="topbar">
-        <div class="crumb">Программы развития &nbsp; / &nbsp; <b>{{ {'tree': 'Структура программы', 'program': 'Программа', 'search': 'Семантический поиск', 'indicators': 'Показатели и индикаторы'}.get(active_tab, program.title) }}</b></div>
+        <div class="crumb"><button type="button" class="menu-toggle" id="menu-toggle" aria-label="Меню разделов">☰</button>Программы развития &nbsp; / &nbsp; <b>{{ {'tree': 'Структура программы', 'program': 'Программа', 'search': 'Семантический поиск', 'indicators': 'Показатели и индикаторы'}.get(active_tab, program.title) }}</b></div>
         <div class="topbar-row">
           <nav class="tabs">
             <a class="tab {{ 'active' if active_tab == 'tree' else '' }}" href="/{{ program.slug }}/tree">Структура программы</a>
@@ -84,6 +85,24 @@
         label();
       });
       label();
+    })();
+  </script>
+  <script>
+    (function(){
+      var nav = document.getElementById('sections-nav');
+      var overlay = document.getElementById('sidebar-overlay');
+      var toggle = document.getElementById('menu-toggle');
+      if (!nav || !overlay) return;
+      function open(){ document.body.classList.add('nav-open'); }
+      function close(){ document.body.classList.remove('nav-open'); }
+      if (toggle) toggle.addEventListener('click', function(){
+        document.body.classList.contains('nav-open') ? close() : open();
+      });
+      overlay.addEventListener('click', close);
+      document.addEventListener('keydown', function(e){ if (e.key === 'Escape') close(); });
+      nav.addEventListener('click', function(e){
+        if (e.target.closest('a.section')) close();
+      });
     })();
   </script>
 </body>
