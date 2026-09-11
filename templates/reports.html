@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% block title %}Отчёты — {{ number }}{% endblock %}
+{% block content %}
+{% set me = identity(request) %}
+<p><a href="/{{ program.slug }}/tree">&larr; Назад к структуре программы</a></p>
+<h2>{{ number }} {{ title }}</h2>
+
+{% if message %}<p class="flash-ok">{{ message }}</p>{% endif %}
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+{% if files %}
+<p class="summary">Файлов: {{ files|length }}</p>
+<ul class="file-list">
+  {% for file in files %}
+  <li>
+    <a href="/{{ program.slug }}/reports/{{ number | urlencode }}/download/{{ file.name | urlencode }}">{{ file.name }}</a>
+    {% if file.previewable %}
+    <a class="file-action" href="/{{ program.slug }}/reports/{{ number | urlencode }}/view/{{ file.name | urlencode }}">Просмотр</a>
+    {% endif %}
+    {% if me and me.is_admin %}
+    <form class="inline-form" method="post" action="/{{ program.slug }}/reports/{{ number | urlencode }}/delete"
+          onsubmit="return confirm('Переместить «{{ file.name }}» в корзину?');">
+      <input type="hidden" name="csrf_token" value="{{ me.csrf_token or '' }}">
+      <input type="hidden" name="filename" value="{{ file.name }}">
+      <button type="submit" class="file-action danger">Удалить</button>
+    </form>
+    {% endif %}
+  </li>
+  {% endfor %}
+</ul>
+{% else %}
+<p class="hint">Отчётных материалов пока нет.</p>
+{% endif %}
+
+{% if me and me.is_admin and can_edit %}
+<section class="admin-section">
+  <h3>Загрузить документы</h3>
+  <form method="post" action="/{{ program.slug }}/reports/{{ number | urlencode }}/upload" enctype="multipart/form-data" class="upload-form">
+    <input type="hidden" name="csrf_token" value="{{ me.csrf_token or '' }}">
+    <input type="file" name="files" multiple required>
+    <label class="checkbox"><input type="checkbox" name="replace" value="true"> заменить файл с таким же именем</label>
+    <button type="submit">Загрузить</button>
+  </form>
+  <p class="hint">
+    Допустимые расширения: {{ allowed_extensions }}. Не более {{ max_upload_mb }} МБ на файл.
+    Загруженные файлы сразу видны в дереве и доступны для скачивания, но в семантический поиск
+    попадают только после переиндексации — она запускается на странице
+    <a href="/admin">Администрирование</a>. Удалённые файлы перемещаются в корзину, а не стираются.
+  </p>
+</section>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Подтверждающие документы — {{ label }}{% endblock %}
+{% block content %}
+<p><a href="/{{ program.slug }}/indicators">&larr; Назад к показателям</a></p>
+<h2>Подтверждающие документы — {{ label }} — {{ indicator_label }}</h2>
+<p class="summary">Найдено записей: {{ records|length }}</p>
+
+{% if records %}
+<div class="passport-table-wrap">
+  <table class="tree-table">
+    <thead><tr>{% for col in columns %}<th>{{ col }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      {% for record in records %}
+      <tr>{% for col in columns %}<td>{{ record.get(col, "") }}</td>{% endfor %}</tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<p class="hint">Для этого показателя/индикатора и проекта подтверждающих документов не найдено.</p>
+{% endif %}
+{% endblock %}

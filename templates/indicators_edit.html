@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Правка показателя — {{ program.title }}{% endblock %}
+{% block content %}
+{% set me = identity(request) %}
+<p><a href="/{{ program.slug }}/indicators?indicator={{ view.selected_key | urlencode }}">&larr; Назад к показателям</a></p>
+<h2>Правка фактических значений</h2>
+
+<form class="filters" method="get" action="/{{ program.slug }}/indicators/edit">
+  <div class="filters-grid indicator-picker">
+    <label class="grow">Показатель / индикатор
+      <select name="indicator" onchange="this.form.submit()">
+        {% for indicator in view.indicators %}
+        <option value="{{ indicator.key }}" {{ 'selected' if indicator.key == view.selected_key else '' }}>{{ indicator_label(indicator) }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <span class="summary">{{ 'Ед. изм.: ' + view.unit if view.unit else '' }}</span>
+  </div>
+</form>
+
+<p class="hint">
+  Правится только столбец «Факт» — значения «Договор» и «Паспорт» берутся из исходной
+  сводной таблицы и здесь не меняются. Пустая ячейка означает «значения нет»: это не то же
+  самое, что ноль. Десятичный разделитель — запятая или точка. Предыдущая версия файла
+  сохраняется в <code>.backups/</code>.
+</p>
+
+<form method="post" action="/{{ program.slug }}/indicators/save">
+  <input type="hidden" name="csrf_token" value="{{ me.csrf_token or '' }}">
+  <input type="hidden" name="indicator" value="{{ view.selected_key }}">
+  <input type="hidden" name="version" value="{{ version }}">
+
+  {% if rows %}
+  <div class="passport-table-wrap">
+    <table class="tree-table">
+      <thead>
+        <tr>
+          <th>Проект / мероприятие</th>
+          <th>Строка сводной таблицы</th>
+          {% for year in view.years %}<th>{{ year }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+        <tr>
+          <td style="padding-left: {{ row.depth * 22 }}px">{{ row.text }}</td>
+          <td class="hint">{{ row.xlsx_row }}</td>
+          {% for year in view.years %}
+          <td class="num">
+            <input class="cell-input" type="text" inputmode="decimal"
+                   name="cell|{{ row.xlsx_row | urlencode }}|{{ year }}"
+                   value="{{ row.raw_values.get(year, '') }}">
+          </td>
+          {% endfor %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  <p><button type="submit">Сохранить</button></p>
+  {% else %}
+  <p class="hint">Для этого показателя нет строк, привязанных к сводной таблице, — править нечего.</p>
+  {% endif %}
+</form>
+{% endblock %}

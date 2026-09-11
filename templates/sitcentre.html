@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Ситуационный центр{% endblock %}
+{% block content %}
+{% if available %}
+<iframe class="sitcentre-frame" src="/sitcentre/frame" title="Ситуационный центр СПбПУ"></iframe>
+{% else %}
+<div class="placeholder">
+  <h2>Ситуационный центр</h2>
+  <p>Файл витрины не найден. Он лежит в <code>Priority Data/</code>, который
+     не входит в репозиторий; путь можно задать переменной
+     <code>SITCENTRE_HTML</code>.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% block title %}Структура программы — {{ program.title }}{% endblock %}
+{% block content %}
+{% set me = identity(request) %}
+{% if message %}<p class="flash-ok">{{ message }}</p>{% endif %}
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<p class="hint">Красным выделены пункты без отчётных материалов. Курсивом показаны листья с финансированием не из гранта.</p>
+
+<form class="filters" method="get">
+  <div class="filters-grid">
+    <label>Поиск
+      <input type="text" name="q" value="{{ view.filters.query }}" placeholder="Номер, название или реквизиты">
+    </label>
+    <label>Руководитель
+      <select name="leader">
+        <option value="">Все руководители</option>
+        {% for value in view.leaders %}
+        <option value="{{ value }}" {{ 'selected' if value == view.filters.leader else '' }}>{{ value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Источник финансирования
+      <select name="funding">
+        <option value="">Все источники</option>
+        {% for value in view.funding_sources %}
+        <option value="{{ value }}" {{ 'selected' if value == view.filters.funding else '' }}>{{ value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Организация
+      <select name="org">
+        <option value="">Все организации</option>
+        {% for value in view.organizations %}
+        <option value="{{ value }}" {{ 'selected' if value == view.filters.organization else '' }}>{{ value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Срок с
+      <select name="date_from">
+        <option value="">Без ограничения</option>
+        {% for value in view.dates %}
+        <option value="{{ value }}" {{ 'selected' if value == view.filters.date_from else '' }}>{{ value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Срок по
+      <select name="date_to">
+        <option value="">Без ограничения</option>
+        {% for value in view.dates %}
+        <option value="{{ value }}" {{ 'selected' if value == view.filters.date_to else '' }}>{{ value }}</option>
+        {% endfor %}
+      </select>
+    </label>
+  </div>
+  <div class="filters-actions">
+    <button type="submit">Применить</button>
+    <a class="button-like" href="/{{ program.slug }}/tree">Сбросить</a>
+    <button type="button" id="expand-all">Развернуть всё</button>
+    <button type="button" id="collapse-all">Свернуть всё</button>
+    <span class="summary">Совпадений: {{ view.direct_matches }} &nbsp;|&nbsp; строк с иерархией: {{ view.inserted_count }} из {{ view.total_nodes }}</span>
+  </div>
+</form>
+
+<p class="coverage">{{ view.coverage_text }}</p>
+
+<table class="tree-table" id="tree-table">
+  <thead>
+    <tr>
+      <th>Мероприятие / работа / этап</th>
+      <th>Плановый срок</th>
+      <th>Руководитель</th>
+      <th>Источник финансирования</th>
+      <th>Организация</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% macro render_rows(rows) %}
+      {% for row in rows %}
+      <tr class="{{ 'no-reports' if not row.has_reports else '' }} {{ 'italic' if row.italic else '' }}"
+          data-depth="{{ row.depth }}"
+          data-has-children="{{ '1' if row.children else '0' }}"
+          data-collapsed="{{ '0' if view.filters.active else '1' }}">
+        <td style="padding-left: {{ row.depth * 22 }}px">{% if row.children %}<span class="toggle"></span>{% endif %}{% if row.has_passport %}<a href="/{{ program.slug }}/project/{{ row.number | urlencode }}" title="Паспорт проекта">{{ row.number }} {{ row.title }}</a>{% elif not row.children %}<a href="/{{ program.slug }}/reports/{{ row.number | urlencode }}" title="Отчётные материалы">{{ row.number }} {{ row.title }}</a>{% else %}{{ row.number }} {{ row.title }}{% endif %}{% if me and me.is_admin %} <a class="edit-pencil" href="/{{ program.slug }}/tree/{{ row.number | urlencode }}/meta" title="Изменить метаданные пункта">✎</a>{% endif %}</td>
+        <td>{{ row.deadline }}</td>
+        <td>{{ row.leader }}</td>
+        <td>{{ row.funding }}</td>
+        <td>{{ row.organization }}</td>
+      </tr>
+      {{ render_rows(row.children) }}
+      {% endfor %}
+    {% endmacro %}
+    {{ render_rows(view.rows) }}
+  </tbody>
+</table>
+<script src="/static/tree.js"></script>
+{% endblock %}

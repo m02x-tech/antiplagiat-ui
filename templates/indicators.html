@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Показатели и индикаторы — {{ program.title }}{% endblock %}
+{% block content %}
+{% set me = identity(request) %}
+{% if message %}<p class="flash-ok">{{ message }}</p>{% endif %}
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+{% if view is none %}
+<p class="hint">Показатели для этой программы не найдены.</p>
+{% else %}
+<form class="filters" method="get">
+  <div class="filters-grid indicator-picker">
+    <label class="grow">Показатель / индикатор
+      <select name="indicator" onchange="this.form.submit()">
+        {% for indicator in view.indicators %}
+        <option value="{{ indicator.key }}" {{ 'selected' if indicator.key == view.selected_key else '' }}>{{ indicator_label(indicator) }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label class="checkbox">
+      <input type="checkbox" name="hide_empty" value="1" {{ 'checked' if view.hide_empty else '' }} onchange="this.form.submit()">
+      Скрыть пустые
+    </label>
+    <span class="summary">{{ 'Ед. изм.: ' + view.unit if view.unit else '' }}</span>
+    {% if me and me.is_admin %}
+    <a class="button-like" href="/{{ program.slug }}/indicators/edit?indicator={{ view.selected_key | urlencode }}">Править факт</a>
+    {% endif %}
+  </div>
+</form>
+
+<table class="tree-table">
+  <thead>
+    <tr>
+      <th>Проект / мероприятие</th>
+      {% for year in view.years %}<th>{{ year }}</th>{% endfor %}
+    </tr>
+  </thead>
+  <tbody>
+    {% macro render_rows(rows, depth) %}
+      {% for row in rows %}
+      <tr class="{{ 'passive' if row.passive else '' }}">
+        <td style="padding-left: {{ depth * 22 }}px">{% if view.has_registry and row.evidence_target %}<a href="/{{ program.slug }}/indicators/evidence?key={{ view.selected_key | urlencode }}&target={{ row.evidence_target | urlencode }}" title="Подтверждающие документы">{{ row.text }}</a>{% else %}{{ row.text }}{% endif %}</td>
+        {% for year in view.years %}<td class="num">{{ row.values.get(year, "") }}</td>{% endfor %}
+      </tr>
+      {{ render_rows(row.children, depth + 1) }}
+      {% endfor %}
+    {% endmacro %}
+    {{ render_rows(view.rows, 0) }}
+  </tbody>
+</table>
+{% endif %}
+{% endblock %}

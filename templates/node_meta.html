@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Метаданные пункта {{ number }}{% endblock %}
+{% block content %}
+{% set me = identity(request) %}
+<p><a href="/{{ program.slug }}/tree">&larr; Назад к структуре программы</a></p>
+<h2>{{ number }} {{ title }}</h2>
+<h3>Метаданные пункта плана</h3>
+
+<form method="post" action="/{{ program.slug }}/tree/{{ number | urlencode }}/meta" class="meta-form">
+  <input type="hidden" name="csrf_token" value="{{ me.csrf_token or '' }}">
+  <input type="hidden" name="version" value="{{ version }}">
+
+  <label>Плановый срок
+    <input type="text" name="deadline" value="{{ meta.deadline }}" placeholder="ММ.ГГГГ">
+    <span class="hint">Формат ММ.ГГГГ, например 12.2026. По этому полю работает фильтр по сроку.</span>
+  </label>
+
+  <label>Руководитель
+    <input type="text" name="leader" value="{{ meta.leader }}">
+    <span class="hint">
+      {% if meta.leader_inherited %}
+      Сейчас наследуется от вышестоящего пункта: <strong>{{ meta.leader_effective }}</strong>.
+      Заполните поле, чтобы назначить руководителя именно этому пункту; пустое поле оставит наследование.
+      {% else %}
+      Назначен этому пункту явно. Очистите поле, чтобы вернуть наследование от вышестоящего пункта.
+      {% endif %}
+    </span>
+  </label>
+
+  <label>Источник финансирования
+    <input type="text" name="funding" value="{{ meta.funding }}">
+    <span class="hint">Несколько значений разделяются « / » — так их разбирают фильтры.</span>
+  </label>
+
+  <label>Организация
+    <input type="text" name="organization" value="{{ meta.organization }}">
+    <span class="hint">Тоже допускает несколько значений через « / ».</span>
+  </label>
+
+  <p>
+    <button type="submit">Сохранить</button>
+    <a class="button-like" href="/{{ program.slug }}/tree">Отмена</a>
+  </p>
+  <p class="hint">Предыдущая версия plan_metadata.json сохраняется в <code>.backups/</code>.</p>
+</form>
+{% endblock %}

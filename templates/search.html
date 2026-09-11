@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Семантический поиск — {{ program.title }}{% endblock %}
+{% block content %}
+{% if not program.has_report_index %}
+<p class="hint">Семантический поиск для этой программы пока недоступен. Отчёты этой программы ещё не проиндексированы.</p>
+{% else %}
+<form class="filters" method="get">
+  <div class="filters-grid">
+    <label class="grow">Запрос
+      <input type="text" name="q" value="{{ query }}" placeholder="Точный или тематический запрос">
+    </label>
+  </div>
+  <div class="filters-actions">
+    <button type="submit">Найти</button>
+  </div>
+</form>
+
+{% if rated %}
+<p class="hint feedback-thanks">Спасибо, оценка сохранена.</p>
+{% endif %}
+
+{% if error %}
+<p class="error">{{ error }}</p>
+{% elif results is not none %}
+<p class="summary">Результатов: {{ results|length }}</p>
+{% for result in results %}
+<div class="result">
+  <div class="result-head">
+    <span class="result-number">{{ result.activity_number }}</span>
+    {% if result.relevance_percent %}<span class="result-score" title="Оценка кросс-энкодера, приведена к 0–100% сигмоидой; не линейная шкала «попаданий».">Релевантность: {{ result.relevance_percent }}</span>{% endif %}
+    <span class="result-path" title="{{ result.relative_path }}">{{ result.file_name }}</span>
+  </div>
+  {% for chunk in result.chunks %}
+  <p class="result-chunk">
+    <span class="result-page">{{ chunk.page_label }}:</span>
+    {{ chunk.snippet_html | safe }}
+  </p>
+  {% endfor %}
+  <form class="feedback" method="post" action="/{{ program.slug }}/search/feedback">
+    <input type="hidden" name="q" value="{{ query }}">
+    <input type="hidden" name="query_id" value="{{ query_id if query_id is not none else '' }}">
+    <input type="hidden" name="rank_position" value="{{ result.rank }}">
+    <input type="hidden" name="relative_path" value="{{ result.relative_path }}">
+    <span class="feedback-label">Насколько это релевантно?</span>
+    <button type="submit" name="grade" value="0" class="feedback-btn">Не по теме</button>
+    <button type="submit" name="grade" value="1" class="feedback-btn">Частично</button>
+    <button type="submit" name="grade" value="2" class="feedback-btn">Именно то</button>
+  </form>
+</div>
+{% else %}
+<p class="hint">Ничего не найдено.</p>
+{% endfor %}
+{% endif %}
+{% endif %}
+{% endblock %}

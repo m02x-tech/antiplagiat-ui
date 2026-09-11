@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}{{ filename }}{% endblock %}
+{% block content %}
+<p><a href="/{{ program.slug }}/reports/{{ number | urlencode }}">&larr; Назад к файлам пункта {{ number }}</a></p>
+<h2>{{ filename }}</h2>
+<p class="summary">
+  {{ number }} {{ title }} &middot;
+  <a href="{{ download_url }}">Скачать</a> &middot;
+  <a href="{{ preview_url }}" target="_blank" rel="noopener">Открыть в новой вкладке</a>
+</p>
+
+<iframe class="file-preview" src="{{ preview_url }}" title="{{ filename }}"></iframe>
+
+<p class="hint">Документ показывается встроенным просмотрщиком браузера. Если он не отобразился, откройте его в новой вкладке или скачайте.</p>
+{% endblock %}

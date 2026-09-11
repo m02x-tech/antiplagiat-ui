@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Правка карточки — {{ program.title }}{% endblock %}
+{% block content %}
+{% set me = identity(request) %}
+<p><a href="/{{ program.slug }}/program?view=digest">&larr; Назад к программе</a></p>
+<h2>Карточка программы «{{ program.title }}»</h2>
+
+<form method="post" action="/{{ program.slug }}/program/save" class="card-form">
+  <input type="hidden" name="csrf_token" value="{{ me.csrf_token or '' }}">
+  <input type="hidden" name="version" value="{{ version }}">
+  <textarea name="card" rows="28" spellcheck="false">{{ card }}</textarea>
+  <p>
+    <button type="submit">Сохранить</button>
+    <a class="button-like" href="/{{ program.slug }}/program?view=digest">Отмена</a>
+  </p>
+</form>
+
+<p class="hint">
+  Текст в формате Markdown, файл <code>{{ cards_path }}</code>. Первая строка обязана
+  оставаться заголовком вида «# Карточка 1. Название»: по ключевым словам в названии
+  («НТИ», «НЦМУ», «ПИШ» и полные наименования) карточка и привязывается к программе.
+  Остальные карточки в файле не затрагиваются, предыдущая версия сохраняется в
+  <code>.backups/</code>.
+</p>
+{% endblock %}

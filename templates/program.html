@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Программа — {{ program.title }}{% endblock %}
+{% block content %}
+{% set me = identity(request) %}
+{% if message %}<p class="flash-ok">{{ message }}</p>{% endif %}
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+<div class="program-toggle">
+  <span class="program-title">{{ program.title }}</span>
+  <a class="button-like {{ 'active' if view == 'full' else '' }} {{ 'disabled' if not program.has_program_pdf else '' }}"
+     href="{{ '/' + program.slug + '/program?view=full' if program.has_program_pdf else '#' }}">Полный документ</a>
+  <a class="button-like {{ 'active' if view == 'digest' else '' }} {{ 'disabled' if not program.has_digest else '' }}"
+     href="{{ '/' + program.slug + '/program?view=digest' if program.has_digest else '#' }}">Дайджест</a>
+  {% if me and me.is_admin %}
+  <a class="button-like" href="/{{ program.slug }}/program/edit">Править карточку</a>
+  {% endif %}
+</div>
+
+{% if view == 'full' and program.has_program_pdf %}
+<iframe class="pdf-frame" src="/{{ program.slug }}/pdf"></iframe>
+{% elif view == 'digest' and digest_html %}
+<div class="digest">{{ digest_html | safe }}</div>
+{% else %}
+<p class="hint">
+  {% if not program.has_program_pdf and not program.has_digest %}
+  Ни полный документ, ни дайджест для этой программы недоступны.
+  {% elif view == 'full' %}
+  Файл программы недоступен.
+  {% else %}
+  Дайджест для этой программы пока не подготовлен.
+  {% endif %}
+</p>
+{% endif %}
+{% endblock %}
