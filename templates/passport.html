@@ -1,67 +1,62 @@
-{% extends "base.html" %}
-{% block title %}Паспорт проекта {{ view.number }}{% endblock %}
-{% block content %}
-<p><a href="/{{ program.slug }}/tree">&larr; Назад к структуре программы</a></p>
-
-{% if view.title_is_placeholder %}
-<h2>Паспорт проекта {{ view.number }} (шаблон не заполнен)</h2>
-{% else %}
-<h2>{{ view.title }}</h2>
-{% endif %}
-<p class="summary">{{ view.meta_text }}</p>
-
 {% macro render_work_node(node) %}
-<tr>
-  <td class="{{ 'bold' if node.bold else '' }}" style="white-space: nowrap;">{{ node.key }} {{ node.title }}</td>
-  <td>{{ node.value }}</td>
+<tr class="{{ 'no-reports' if node.zero_reports else '' }} {{ 'italic' if node.non_grant else '' }}" data-depth="{{ node.depth }}" data-has-children="{{ 1 if node.has_children else 0 }}" data-collapsed="0">
+  <td>
+    <span class="toggle">{{ '▾' if node.has_children else '' }}</span>
+    <span style="padding-left: {{ (node.depth - 1) * 18 }}px"></span>
+    {{ node.number }} {{ node.title }}
+  </td>
+  <td>{{ node.deadline }}</td>
+  <td>{{ node.leader }}</td>
+  <td>{{ node.funding }}</td>
 </tr>
-{% for child in node.children %}{{ render_work_node(child) }}{% endfor %}
-{% endmacro %}
-
-{% macro render_table(item) %}
-<div class="passport-table-wrap">
-  <table class="tree-table">
-    <thead><tr>{% for h in item.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
-    <tbody>
-      {% for row in item.rows %}
-      <tr class="{{ 'bold' if item.row_bold[loop.index0] else '' }}">
-        {% for cell in row %}<td>{{ cell }}</td>{% endfor %}
-      </tr>
-      {% endfor %}
-    </tbody>
-  </table>
-</div>
+{% if node.children %}{% for c in node.children %}{{ render_work_node(c) }}{% endfor %}{% endif %}
 {% endmacro %}
 
 {% macro render_item(item) %}
-  {% if item.kind == 'kv' %}
-  <div class="passport-kv"><span class="passport-field">{{ item.field }}</span><span class="passport-value">{{ item.value }}</span></div>
-  {% elif item.kind == 'subtitle' %}
-  <div class="passport-subtitle">{{ item.field }}</div>
-  {% elif item.kind == 'table' %}
-  {{ render_table(item) }}
-  {% elif item.kind == 'group' %}
-  <div class="passport-subtitle">{{ item.title }}</div>
+{% if item.kind == 'section' %}
+<div class="passport-section">
+  <h3>{{ item.title }}</h3>
   {% for child in item.children %}{{ render_item(child) }}{% endfor %}
-  {% elif item.kind == 'work_tree' %}
-  <div class="passport-table-wrap">
-    <table class="tree-table">
-      <tbody>
-        {% for node in item.work_nodes %}{{ render_work_node(node) }}{% endfor %}
-      </tbody>
-    </table>
-  </div>
-  {% endif %}
+</div>
+{% elif item.kind == 'table' %}
+<div class="passport-table-wrap">
+  <div class="table-wrap"><table class="tree-table">
+    <thead><tr>{% for h in item.headers %}<th>{{ h }}</th>{% endfor %}</tr></thead>
+    <tbody>
+      {% for row in item.rows %}
+      <tr class="{{ 'bold' if row.bold else '' }}">{% for cell in row.cells %}<td>{{ cell }}</td>{% endfor %}</tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% elif item.kind == 'kv' %}
+<div class="passport-kv"><span class="passport-field">{{ item.field }}</span><span class="passport-value">{{ item.value }}</span></div>
+{% elif item.kind == 'items' %}
+<div class="passport-subtitle">{{ item.title }}</div>
+{% for child in item.children %}{{ render_item(child) }}{% endfor %}
+{% elif item.kind == 'work_tree' %}
+<div class="passport-table-wrap">
+  <div class="table-wrap"><table class="tree-table">
+    <thead><tr><th>Номер и название</th><th>Срок</th><th>Руководитель</th><th>Источник</th></tr></thead>
+    <tbody>
+      {% for node in item.work_nodes %}{{ render_work_node(node) }}{% endfor %}
+    </tbody>
+  </table></div>
+</div>
+{% endif %}
 {% endmacro %}
 
-{% for section in view.sections %}
-<section class="passport-section">
-  <h3>{{ section.title }}</h3>
-  {% for item in section.items %}{{ render_item(item) }}{% endfor %}
-</section>
-{% endfor %}
-
-{% if view.source %}
-<p class="hint">Источник: {{ view.source }}</p>
-{% endif %}
-{% endblock %}
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Паспорт проекта {{ project.number }}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body class="login-body" style="display: block; padding: 28px 40px;">
+  <h2>Паспорт проекта {{ project.number }} «{{ project.title }}»</h2>
+  <p class="hint">Программа: {{ program.title }}. Сформировано автоматически по данным структуры программы.</p>
+  {% for item in passport.items %}{{ render_item(item) }}{% endfor %}
+</body>
+</html>
