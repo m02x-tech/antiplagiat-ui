@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Документы — {{ number }} {{ title }}{% endblock %}
+{% block content %}
+<div class="documents-table-container">
+  {% if not partial %}
+  <p><a href="/antiplagiat?program={{ program.slug }}&variant={{ variant }}&cutoff={{ cutoff }}">&larr; Назад к дереву антиплагиата</a></p>
+  <h2>{{ number }} {{ title }}</h2>
+  {% endif %}
+
+  {% if documents %}
+  <table class="documents-table">
+    <thead>
+      <tr>
+        <th>Файл документа</th>
+        <th>{{ 'Оригинальность (без типовых)' if cutoff in ('unique', 'no_typical', 'without_typical', '3') else 'Оригинальность' }}</th>
+        <th>Объём слов</th>
+        <th>Заимствовано</th>
+        <th>Действие</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for doc in documents %}
+      {% set p = doc.originality_pct %}
+      {% set badge_cls = 'badge-orig-high' if p >= 85.0 else ('badge-orig-mid' if p >= 65.0 else 'badge-orig-low') %}
+      <tr>
+        <td>
+          <a class="doc-link" href="/antiplagiat/{{ program.slug }}/document?path={{ doc.relative_path | urlencode }}&variant={{ variant }}&cutoff={{ cutoff }}" title="Открыть карточку документа">
+            <strong>{{ doc.filename }}</strong>
+          </a>
+        </td>
+        <td>
+          <span class="badge-pill {{ badge_cls }}">{{ p }}%</span>
+        </td>
+        <td>{{ "{:,}".format(doc.body_words).replace(",", " ") }} слов</td>
+        <td>{{ "{:,}".format(doc.borrowed_words).replace(",", " ") }} слов</td>
+        <td>
+          <a class="button-like" href="/antiplagiat/{{ program.slug }}/document?path={{ doc.relative_path | urlencode }}&variant={{ variant }}&cutoff={{ cutoff }}">
+            Карточка документа &rarr;
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="hint">В этом пункте нет оценённых документов.</p>
+  {% endif %}
+</div>
+{% endblock %}

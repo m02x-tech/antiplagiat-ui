@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}DevProgData{% endblock %}</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  {% set me = identity(request) %}
+  {% set section = active_section|default('programs') %}
+  <div class="shell">
+    {# Outer navigation: three sections that differ by SOURCE of data, not
+       by view of the same data. Only «Программы развития» is scoped to a
+       programme, which is why the programme switcher lives inside it.
+       «Администрирование» joins them for an admin: the server's own
+       journal and re-index are a fourth source, and it is the one page
+       where the programme tabs would mean nothing. #}
+    <nav class="sections">
+      <a class="section {{ 'active' if section == 'sitcentre' else '' }}"
+         href="/sitcentre">Ситуационный центр</a>
+      <a class="section {{ 'active' if section == 'programs' and active_tab != 'admin' else '' }}"
+         href="/{{ program.slug if program else 'ntic' }}/tree">Программы развития</a>
+      <a class="section {{ 'active' if section == 'antiplagiat' else '' }}"
+         href="/antiplagiat">Антиплагиат</a>
+      {% if me and me.is_admin %}
+      <a class="section {{ 'active' if active_tab == 'admin' else '' }}"
+         href="/admin">Администрирование</a>
+      {% endif %}
+      {% if me %}
+      <div class="user-chip">
+        <span class="user-name">{{ me.username }}</span>
+        <span class="role-badge {{ 'role-admin' if me.is_admin else 'role-viewer' }}">{{ 'Администратор' if me.is_admin else 'Просмотр' }}</span>
+        <form method="post" action="/logout"><button type="submit">Выйти</button></form>
+      </div>
+      {% endif %}
+    </nav>
+
+    <div class="pane">
+      {% if section == 'programs' and active_tab != 'admin' %}
+      <header class="topbar">
+        <div class="topbar-row">
+          <nav class="tabs">
+            <a class="tab {{ 'active' if active_tab == 'tree' else '' }}" href="/{{ program.slug }}/tree">Структура программы</a>
+            <a class="tab {{ 'active' if active_tab == 'program' else '' }}" href="/{{ program.slug }}/program">Программа</a>
+            <a class="tab {{ 'active' if active_tab == 'search' else '' }}" href="/{{ program.slug }}/search">Семантический поиск</a>
+            <a class="tab {{ 'active' if active_tab == 'indicators' else '' }}" href="/{{ program.slug }}/indicators">Показатели и индикаторы</a>
+          </nav>
+          <form class="program-switch" method="get" action="#" onsubmit="return false;">
+            <label for="program-select">Программа</label>
+            <select id="program-select" onchange="location.href = '/' + this.value + '/{{ active_tab }}';">
+              {% for p in programs %}
+              <option value="{{ p.slug }}" {{ 'selected' if p.slug == program.slug else '' }}>{{ p.title }}</option>
+              {% endfor %}
+            </select>
+          </form>
+        </div>
+      </header>
+      {% endif %}
+      {# content-bare drops the padding for the two sections that fill the
+         pane with an iframe; the admin page is ordinary content. #}
+      <main class="content {{ 'content-bare' if section in ('sitcentre', 'antiplagiat') else '' }}">
+        {% block content %}{% endblock %}
+      </main>
+    </div>
+  </div>
+</body>
+</html>

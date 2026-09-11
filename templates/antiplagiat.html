@@ -1,0 +1,249 @@
+{% extends "base.html" %}
+{% block title %}Антиплагиат — {{ program.title }}{% endblock %}
+{% block content %}
+{% set me = identity(request) %}
+{% if message %}<p class="flash-ok">{{ message }}</p>{% endif %}
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+<div class="antiplagiat-topbar">
+  <div class="antiplagiat-controls">
+    <label>Программа:
+      <select onchange="location.href = '/antiplagiat?program=' + this.value + '&variant={{ variant }}&cutoff={{ cutoff }}';">
+        {% for p in programs %}
+        <option value="{{ p.slug }}" {{ 'selected' if p.slug == program.slug else '' }}>{{ p.title }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label>Вариант расчёта:
+      <select onchange="location.href = '/antiplagiat?program={{ program.slug }}&variant=' + this.value + '&cutoff={{ cutoff }}';">
+        <option value="default" {{ 'selected' if variant == 'default' else '' }}>Базовый (глушение внутри проекта)</option>
+        <option value="no_same_project" {{ 'selected' if variant == 'no_same_project' else '' }}>Без внутрипроектного глушения</option>
+      </select>
+    </label>
+
+    <label>Учёт типового текста:
+      <select onchange="location.href = '/antiplagiat?program={{ program.slug }}&variant={{ variant }}&cutoff=' + this.value;">
+        <option value="all" {{ 'selected' if cutoff == 'all' or not cutoff else '' }}>Все совпадения</option>
+        <option value="unique" {{ 'selected' if cutoff in ('unique', 'no_typical', 'without_typical', '3') else '' }}>Без типовых (3+ доноров)</option>
+      </select>
+    </label>
+
+    <button type="button" id="expand-all">Развернуть всё</button>
+    <button type="button" id="collapse-all">Свернуть всё</button>
+
+    {% if me and me.is_admin and not no_index %}
+    <form method="post" action="/antiplagiat/recompute" style="display:inline;">
+      <input type="hidden" name="csrf_token" value="{{ me.csrf_token or '' }}">
+      <input type="hidden" name="program" value="{{ program.slug }}">
+      <input type="hidden" name="variant" value="{{ variant }}">
+      <input type="hidden" name="cutoff" value="{{ cutoff }}">
+      <button type="submit" title="Запустить пересчёт оригинальности">Пересчитать оригинальность</button>
+    </form>
+    {% endif %}
+  </div>
+</div>
+
+{% if no_index %}
+<div class="antiplagiat-banner">
+  <h3>Поисковый индекс отчётов отсутствует</h3>
+  <p>Для программы <strong>{{ program.title }}</strong> поисковый индекс отчётов не сформирован. Расчёт оригинальности и взаимных заимствований не производился.</p>
+</div>
+{% else %}
+
+<div class="antiplagiat-legend">
+  <span class="legend-item"><span class="badge-pill badge-orig-high">&ge; 85%</span> высокая оригинальность</span>
+  <span class="legend-item"><span class="badge-pill badge-orig-mid">65–84%</span> умеренные заимствования</span>
+  <span class="legend-item"><span class="badge-pill badge-orig-low">&lt; 65%</span> критические заимствования</span>
+  <span class="legend-item"><span class="badge-pill badge-orig-none">не посчитано</span> нет данных</span>
+  <span class="legend-item"><span class="badge-orig-warn">⚠</span> худший документ &lt; 60%</span>
+  {% if cutoff in ('unique', 'no_typical', 'without_typical', '3') %}
+  <span class="legend-item" style="color: #6ee7b7; font-weight: 500;">✓ исключены типовые фрагменты (3+ доноров)</span>
+  {% endif %}
+  <span class="legend-hint">Двойной клик по строке листа открывает список документов.</span>
+</div>
+
+<form class="filters" method="get" action="/antiplagiat">
+  <input type="hidden" name="program" value="{{ program.slug }}">
+  <input type="hidden" name="variant" value="{{ variant }}">
+  <input type="hidden" name="cutoff" value="{{ cutoff }}">
+  <div class="filters-actions" style="margin-bottom: 8px;">
+    <input type="text" name="q" value="{{ query }}" placeholder="Поиск по номеру или названию пункта" style="min-width: 280px;">
+    <button type="submit">Найти</button>
+    {% if query %}<a class="button-like" href="/antiplagiat?program={{ program.slug }}&variant={{ variant }}&cutoff={{ cutoff }}">Сбросить</a>{% endif %}
+  </div>
+</form>
+
+<table class="tree-table antiplagiat-table" id="tree-table">
+  <thead>
+    <tr>
+      <th>Мероприятие / работа / этап</th>
+      <th>Срок</th>
+      <th>Руководитель</th>
+      <th>{{ 'Оригинальность листа (без типовых)' if cutoff in ('unique', 'no_typical', 'without_typical', '3') else 'Оригинальность листа' }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% macro render_rows(rows) %}
+      {% for row in rows %}
+      {% set is_leaf = not row.children %}
+      <tr class="{{ 'leaf-row' if is_leaf else 'parent-row' }}"
+          data-depth="{{ row.depth }}"
+          data-has-children="{{ '1' if row.children else '0' }}"
+          data-collapsed="{{ '0' if view.filters.active else '1' }}"
+          data-slug="{{ program.slug }}"
+          data-number="{{ row.number }}"
+          data-is-leaf="{{ '1' if is_leaf else '0' }}">
+        <td style="padding-left: {{ row.depth * 22 }}px">
+          {% if row.children %}<span class="toggle">▸</span>{% endif %}
+          <span class="node-title">{{ row.number }} {{ row.title }}</span>
+        </td>
+        <td>{{ row.deadline }}</td>
+        <td>{{ row.leader }}</td>
+        <td>
+          {% if is_leaf %}
+            {% set orig = originality_by_leaf.get(row.number) %}
+            {% if orig and orig.computed %}
+              {% set p = orig.weighted_pct %}
+              {% set badge_cls = 'badge-orig-high' if p >= 85.0 else ('badge-orig-mid' if p >= 65.0 else 'badge-orig-low') %}
+              <span class="badge-pill {{ badge_cls }}">{{ p }}%</span>
+              <span class="triplet-info">(мин: {{ orig.worst_pct }}%, {{ orig.doc_count }} док.)</span>
+              {% if orig.worst_pct < 60.0 %}<span class="badge-orig-warn" title="Худший документ: {{ orig.worst_pct }}%">⚠</span>{% endif %}
+              <button type="button" class="btn-leaf-toggle" onclick="toggleLeafDocs(this, '{{ program.slug }}', '{{ row.number }}')">документы</button>
+            {% else %}
+              <span class="badge-pill badge-orig-none">не посчитано</span>
+            {% endif %}
+          {% else %}
+            —
+          {% endif %}
+        </td>
+      </tr>
+      {{ render_rows(row.children) }}
+      {% endfor %}
+    {% endmacro %}
+    {{ render_rows(view.rows) }}
+
+    {% if unattached_stats %}
+    <tr class="leaf-row unattached-row"
+        data-depth="0"
+        data-has-children="0"
+        data-collapsed="0"
+        data-slug="{{ program.slug }}"
+        data-number="0_outside"
+        data-is-leaf="1">
+      <td><strong>⚡ Вне дерева</strong> (документы вне структуры плана)</td>
+      <td>—</td>
+      <td>—</td>
+      <td>
+        {% set p = unattached_stats.weighted_pct %}
+        {% set badge_cls = 'badge-orig-high' if p >= 85.0 else ('badge-orig-mid' if p >= 65.0 else 'badge-orig-low') %}
+        <span class="badge-pill {{ badge_cls }}">{{ p }}%</span>
+        <span class="triplet-info">(мин: {{ unattached_stats.worst_pct }}%, {{ unattached_stats.doc_count }} док.)</span>
+        {% if unattached_stats.worst_pct < 60.0 %}<span class="badge-orig-warn" title="Худший документ: {{ unattached_stats.worst_pct }}%">⚠</span>{% endif %}
+        <button type="button" class="btn-leaf-toggle" onclick="toggleLeafDocs(this, '{{ program.slug }}', '0_outside')">документы</button>
+      </td>
+    </tr>
+    {% endif %}
+  </tbody>
+</table>
+
+<script>
+(function() {
+  const table = document.getElementById("tree-table");
+  if (!table) return;
+  const rows = Array.from(table.tBodies[0].rows);
+
+  function updateVisibility() {
+    let hideUntilDepth = null;
+    for (const row of rows) {
+      if (row.classList.contains("leaf-drawer")) continue;
+      const depth = parseInt(row.dataset.depth || "0", 10);
+      if (hideUntilDepth !== null && depth > hideUntilDepth) {
+        row.style.display = "none";
+        continue;
+      }
+      hideUntilDepth = null;
+      row.style.display = "";
+      if (row.dataset.hasChildren === "1" && row.dataset.collapsed === "1") {
+        hideUntilDepth = depth;
+      }
+    }
+    for (const row of rows) {
+      const toggle = row.querySelector(".toggle");
+      if (toggle) {
+        toggle.textContent = row.dataset.collapsed === "1" ? "▸" : "▾";
+      }
+    }
+  }
+
+  table.tBodies[0].addEventListener("click", function(event) {
+    const toggle = event.target.closest(".toggle");
+    if (!toggle) return;
+    const row = toggle.closest("tr");
+    row.dataset.collapsed = row.dataset.collapsed === "1" ? "0" : "1";
+    updateVisibility();
+  });
+
+  // Double-click on leaf rows opens documents drawer
+  table.tBodies[0].addEventListener("dblclick", function(event) {
+    const row = event.target.closest("tr.leaf-row");
+    if (!row) return;
+    const slug = row.dataset.slug;
+    const number = row.dataset.number;
+    if (slug && number) {
+      const btn = row.querySelector(".btn-leaf-toggle");
+      toggleLeafDocs(btn || row, slug, number);
+    }
+  });
+
+  const expandAll = document.getElementById("expand-all");
+  const collapseAll = document.getElementById("collapse-all");
+  if (expandAll) {
+    expandAll.addEventListener("click", function() {
+      for (const row of rows) row.dataset.collapsed = "0";
+      updateVisibility();
+    });
+  }
+  if (collapseAll) {
+    collapseAll.addEventListener("click", function() {
+      for (const row of rows) row.dataset.collapsed = "1";
+      updateVisibility();
+    });
+  }
+
+  updateVisibility();
+})();
+
+function toggleLeafDocs(trigger, slug, number) {
+  const row = trigger.closest("tr");
+  const next = row.nextElementSibling;
+  if (next && next.classList.contains("leaf-drawer") && next.dataset.drawerFor === number) {
+    next.remove();
+    return;
+  }
+
+  const drawer = document.createElement("tr");
+  drawer.className = "leaf-drawer";
+  drawer.dataset.drawerFor = number;
+  const td = document.createElement("td");
+  td.colSpan = 4;
+  td.innerHTML = '<div class="drawer-loading">Загрузка документов...</div>';
+  drawer.appendChild(td);
+  row.parentNode.insertBefore(drawer, next);
+
+  const url = "/antiplagiat/" + encodeURIComponent(slug) + "/leaf/" + encodeURIComponent(number) + "?variant={{ variant }}&cutoff={{ cutoff }}&partial=1";
+  fetch(url)
+    .then(r => r.text())
+    .then(html => {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const table = doc.querySelector(".documents-table-container") || doc.body;
+      td.innerHTML = table.innerHTML;
+    })
+    .catch(err => {
+      td.innerHTML = '<div class="error">Ошибка загрузки документов: ' + err + '</div>';
+    });
+}
+</script>
+{% endif %}
+{% endblock %}

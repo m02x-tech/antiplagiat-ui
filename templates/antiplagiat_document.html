@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+{% block title %}Карточка: {{ card.filename }} — DevProgData{% endblock %}
+{% block content %}
+<p><a href="/antiplagiat?program={{ program.slug }}&variant={{ variant }}&cutoff={{ cutoff }}">&larr; Назад к структуре программы</a></p>
+
+<header class="doc-card-header">
+  <h2>Карточка документа: {{ card.filename }}</h2>
+  <div class="doc-card-meta">
+    <span>Программа: <strong>{{ card.program }}</strong></span> &nbsp;|&nbsp;
+    <span>Пункт плана: <strong>{{ card.activity_number }}</strong></span> &nbsp;|&nbsp;
+    <span>Вариант расчёта: <strong>{{ 'Базовый (глушение внутри проекта)' if card.variant == 'default' else 'Без внутрипроектного глушения' }}</strong></span>
+    {% if card.sha256 %}
+    <br><span class="hint">Хэш SHA256: <code>{{ card.sha256 }}</code></span>
+    {% endif %}
+  </div>
+</header>
+
+<div class="k-switcher-panel">
+  <label for="k-cutoff-select">Порог кратности доноров (K):</label>
+  <select id="k-cutoff-select" onchange="applyKCutoff(this.value)">
+    <option value="all" {{ 'selected' if current_k == 'all' or not current_k else '' }}>Все совпадения (без фильтра по K)</option>
+    <option value="2" {{ 'selected' if current_k == '2' else '' }}>K = 2 (только одиночные доноры)</option>
+    <option value="3" {{ 'selected' if current_k == '3' else '' }}>K = 3 (без типовых, &ge;3 доноров)</option>
+    <option value="5" {{ 'selected' if current_k == '5' else '' }}>K = 5 (&lt; 5 доноров)</option>
+    <option value="10" {{ 'selected' if current_k == '10' else '' }}>K = 10 (&lt; 10 доноров)</option>
+  </select>
+  <span class="hint" id="k-cutoff-hint">Пересчёт процента выполняется на месте по объединению позиций слов (без пересчёта корпуса).</span>
+</div>
+
+<div class="doc-metrics-grid">
+  <div class="metric-box">
+    <div class="metric-title">Оригинальность (по словам)</div>
+    {% set p = card.originality_pct %}
+    {% set badge_cls = 'badge-orig-high' if p >= 85.0 else ('badge-orig-mid' if p >= 65.0 else 'badge-orig-low') %}
+    <div class="metric-value">
+      <span id="metric-orig-badge" class="badge-pill {{ badge_cls }}" style="font-size: 20px; padding: 4px 12px;">{{ p }}%</span>
+    </div>
+    <div class="metric-sub">
+      Заимствовано: <strong id="metric-borrowed-words">{{ "{:,}".format(card.borrowed_words).replace(",", " ") }}</strong> из <strong>{{ "{:,}".format(card.body_words).replace(",", " ") }}</strong> слов тела
+    </div>
+    <div class="metric-sub hint" id="metric-k-note" style="margin-top: 4px;">
+      {% if current_k and current_k != 'all' %}
+      (с учётом K={{ current_k }}: типовые с &ge;{{ current_k }} донорами исключены)
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="metric-box">
+    <div class="metric-title">Контрольная колонка (по символам)</div>
+    <div class="metric-value">
+      <span class="badge-pill badge-orig-none" style="font-size: 20px; padding: 4px 12px;">{{ card.char_originality_pct }}%</span>
+    </div>
+    <div class="metric-sub">
+      Заимствовано: <strong>{{ "{:,}".format(card.borrowed_chars).replace(",", " ") }}</strong> из <strong>{{ "{:,}".format(card.body_chars).replace(",", " ") }}</strong> символов
+    </div>
+  </div>
+
+  <div class="metric-box">
+    <div class="metric-title">Исходный файл</div>
+    <div class="metric-actions">
+      {% if card.file_exists %}
+      <a class="button-like" href="/{{ program.slug }}/reports/{{ card.activity_number | urlencode }}/download/{{ card.filename | urlencode }}" title="Скачать файл">
+        Скачать файл
+      </a>
+      <a class="button-like" href="/{{ program.slug }}/reports/{{ card.activity_number | urlencode }}/view/{{ card.filename | urlencode }}" title="Просмотр в браузере">
+        Просмотр
+      </a>
+      {% else %}
+      <span class="hint">Файл отсутствует на диске</span>
+      {% endif %}
+    </div>
+    {% if card.local_path %}
+    <div class="metric-sub hint" style="margin-top: 8px;">
+      Путь: <code>{{ card.local_path }}</code>
+    </div>
+    {% endif %}
+  </div>
+</div>
+
+<section class="doc-section">
+  <h3>Доноры заимствований ({{ card.donors|length }})</h3>
+  {% if card.donors %}
+  <table class="documents-table">
+    <thead>
+      <tr>
+        <th>Донор (программа / файл)</th>
+        <th>Доля заимствования</th>
+        <th>Число пассажей</th>
+        <th>Направленность (года)</th>
+        <th>Действие</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for donor in card.donors %}
+      <tr>
+        <td>
+          <strong>{{ donor.donor_program }}</strong>: {{ donor.donor_filename }}
+          <br><span class="hint">{{ donor.donor_relative_path }}</span>
+        </td>
+        <td>
+          <span class="badge-pill {{ 'badge-orig-low' if donor.borrowed_pct > 15.0 else 'badge-orig-mid' }}">{{ donor.borrowed_pct }}%</span>
+          <span class="triplet-info">({{ "{:,}".format(donor.borrowed_words).replace(",", " ") }} слов)</span>
+        </td>
+        <td>{{ donor.passage_count }}</td>
+        <td>
+          {% if donor.direction == 'dst_older' %}
+          <span class="dir-tag dir-donor-older">Донор старше &larr; первоисточник</span>
+          {% elif donor.direction == 'src_older' %}
+          <span class="dir-tag dir-src-older">Донор моложе (реципиент старше)</span>
+          {% else %}
+          <span class="dir-tag dir-undated">Год не установлен (без стрелки)</span>
+          {% endif %}
+          <span class="hint">({{ donor.src_year or '?' }} vs {{ donor.dst_year or '?' }})</span>
+        </td>
+        <td>
+          <a class="button-like" href="/antiplagiat/{{ program.slug }}/document?path={{ donor.donor_relative_path | urlencode }}&variant={{ variant }}&cutoff={{ cutoff }}&k={{ current_k }}" title="Открыть карточку донора">
+            Карточка донора &rarr;
+          </a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="hint flash-ok" style="background: rgba(34, 197, 94, 0.1); padding: 10px; border-radius: 4px; border: 1px solid rgba(34, 197, 94, 0.3);">
+    ✓ Внешних заимствований не обнаружено (100% оригинальность).
+  </p>
+  {% endif %}
+</section>
+
+<section class="doc-section">
+  <h3>Пассажи заимствований и типовых фрагментов ({{ card.passages|length }})</h3>
+  {% if card.passages %}
+  <div class="passages-list">
+    {% for p in card.passages %}
+    {% set other_reports = (p.donor_count - 1) if p.donor_count and p.donor_count > 0 else 0 %}
+    {% set is_typical = p.donor_count >= 3 %}
+    <article class="passage-card {{ 'passage-typical passage-dimmed' if is_typical else 'passage-unique' }}"
+             data-ord="{{ p.passage_ord }}"
+             data-word-from="{{ p.word_from }}"
+             data-run-words="{{ p.run_words }}"
+             data-donor-count="{{ p.donor_count }}">
+      <header class="passage-header">
+        <div class="passage-title">
+          <strong>Пассаж #{{ p.passage_ord }}</strong>:
+          {{ p.run_words }} слов,
+          страницы {{ p.page_from }}{% if p.page_to != p.page_from %}–{{ p.page_to }}{% endif %}
+          {% if is_typical %}
+            <span class="badge-pill badge-typical-pill" title="Фрагмент разделяют 3 и более несвязанных документов">Типовой текст</span>
+          {% else %}
+            <span class="badge-pill badge-unique-pill" title="Индивидуальное заимствование">Заимствование</span>
+          {% endif %}
+          <span class="passage-excluded-badge badge-pill badge-orig-none" style="display: none; margin-left: 6px;">исключён фильтром K</span>
+        </div>
+        <div class="passage-source">
+          Источник: <strong>{{ p.donor_program }}</strong> /
+          <a href="/antiplagiat/{{ program.slug }}/document?path={{ p.donor_relative_path | urlencode }}&variant={{ variant }}&cutoff={{ cutoff }}&k={{ current_k }}">{{ p.donor_filename }}</a>
+        </div>
+      </header>
+      <div class="passage-multiplicity-bar">
+        <span class="multiplicity-label">
+          {% if other_reports == 0 %}
+            этот фрагмент есть ещё в 0 отчётах (уникальное совпадение)
+          {% elif other_reports % 10 == 1 and other_reports % 100 != 11 %}
+            этот фрагмент есть ещё в {{ other_reports }} отчёте
+          {% else %}
+            этот фрагмент есть ещё в {{ other_reports }} отчётах
+          {% endif %}
+        </span>
+        {% if is_typical %}
+          <span class="multiplicity-note hint">— разделы ГОСТ, методики или стандартные формулировки</span>
+        {% endif %}
+      </div>
+      <div class="passage-body">
+        {% if p.text %}
+        <blockquote class="passage-snippet">{{ p.text }}</blockquote>
+        {% else %}
+        <p class="hint">Текст пассажа доступен в файле на страницах {{ p.page_from }}–{{ p.page_to }}.</p>
+        {% endif %}
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  {% else %}
+  <p class="hint">Нет зафиксированных пассажей заимствования.</p>
+  {% endif %}
+</section>
+
+<script>
+(function() {
+  const passages = [
+    {% for p in card.passages %}
+    {
+      ord: {{ p.passage_ord }},
+      wordFrom: {{ p.word_from }},
+      runWords: {{ p.run_words }},
+      donorCount: {{ p.donor_count }}
+    },
+    {% endfor %}
+  ];
+  const bodyWords = {{ card.body_words }};
+  const baseBorrowedWords = {{ card.base_borrowed_words if card.base_borrowed_words is not none else card.borrowed_words }};
+
+  function computeBorrowed(cutoff) {
+    if (cutoff === "all" || cutoff === null || cutoff === undefined || cutoff === "") {
+      const intervals = [];
+      for (const p of passages) {
+        if (p.runWords > 0) intervals.push([p.wordFrom, p.wordFrom + p.runWords]);
+      }
+      if (intervals.length === 0) return baseBorrowedWords;
+      intervals.sort((a, b) => a[0] - b[0]);
+      const merged = [];
+      let [curStart, curEnd] = intervals[0];
+      for (let i = 1; i < intervals.length; i++) {
+        const [start, end] = intervals[i];
+        if (start <= curEnd) curEnd = Math.max(curEnd, end);
+        else {
+          merged.push([curStart, curEnd]);
+          curStart = start;
+          curEnd = end;
+        }
+      }
+      merged.push([curStart, curEnd]);
+      return merged.reduce((acc, [s, e]) => acc + (e - s), 0);
+    }
+
+    const k = parseInt(cutoff, 10);
+    if (isNaN(k)) return baseBorrowedWords;
+
+    const intervals = [];
+    for (const p of passages) {
+      if (p.donorCount < k && p.runWords > 0) {
+        intervals.push([p.wordFrom, p.wordFrom + p.runWords]);
+      }
+    }
+    if (intervals.length === 0) return 0;
+    intervals.sort((a, b) => a[0] - b[0]);
+    const merged = [];
+    let [curStart, curEnd] = intervals[0];
+    for (let i = 1; i < intervals.length; i++) {
+      const [start, end] = intervals[i];
+      if (start <= curEnd) curEnd = Math.max(curEnd, end);
+      else {
+        merged.push([curStart, curEnd]);
+        curStart = start;
+        curEnd = end;
+      }
+    }
+    merged.push([curStart, curEnd]);
+    return merged.reduce((acc, [s, e]) => acc + (e - s), 0);
+  }
+
+  function formatNumber(num) {
+    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+  }
+
+  function applyKCutoff(val) {
+    const borrowed = computeBorrowed(val);
+    const origPct = bodyWords > 0
+      ? (100 * (1 - borrowed / bodyWords)).toFixed(1)
+      : "100.0";
+
+    const badge = document.getElementById("metric-orig-badge");
+    if (badge) {
+      badge.textContent = origPct + "%";
+      badge.className = "badge-pill " + (origPct >= 85 ? "badge-orig-high" : (origPct >= 65 ? "badge-orig-mid" : "badge-orig-low"));
+    }
+    const borrowedEl = document.getElementById("metric-borrowed-words");
+    if (borrowedEl) {
+      borrowedEl.textContent = formatNumber(borrowed);
+    }
+    const noteEl = document.getElementById("metric-k-note");
+    if (noteEl) {
+      if (val !== "all") {
+        noteEl.textContent = "(фильтр K=" + val + ": типовые с ≥" + val + " донорами исключены)";
+      } else {
+        noteEl.textContent = "";
+      }
+    }
+
+    const k = val === "all" ? Infinity : parseInt(val, 10);
+    const cards = document.querySelectorAll(".passage-card");
+    cards.forEach(c => {
+      const dCount = parseInt(c.dataset.donorCount || "1", 10);
+      const exclBadge = c.querySelector(".passage-excluded-badge");
+      if (dCount >= k) {
+        c.classList.add("passage-excluded");
+        if (exclBadge) exclBadge.style.display = "inline-block";
+      } else {
+        c.classList.remove("passage-excluded");
+        if (exclBadge) exclBadge.style.display = "none";
+      }
+    });
+
+    try {
+      const url = new URL(window.location);
+      url.searchParams.set("k", val);
+      window.history.replaceState({}, "", url);
+    } catch (e) {}
+  }
+
+  window.applyKCutoff = applyKCutoff;
+
+  const initialK = "{{ current_k }}";
+  if (initialK && initialK !== "all") {
+    applyKCutoff(initialK);
+  }
+})();
+</script>
+{% endblock %}
