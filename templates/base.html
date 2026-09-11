@@ -7,6 +7,11 @@
   <script>
     (function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}})();
   </script>
+  {# Знак в шапке вкладки. SVG, потому что на модульной сетке он остаётся
+     читаемым и в 16 px, а браузеры без поддержки SVG-иконок берут PNG. #}
+  <link rel="icon" type="image/svg+xml" href="/static/sitcentre-logo.svg">
+  <link rel="alternate icon" type="image/png" href="/static/favicon-32.png">
+  <link rel="apple-touch-icon" href="/static/favicon-180.png">
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
