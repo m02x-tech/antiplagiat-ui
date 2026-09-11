@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}Антиплагиат — {{ program.title }}{% endblock %}
+{% block title %}Карты смыслов — {{ program.title }}{% endblock %}
 {% block content %}
 {% set me = identity(request) %}
 {% if message %}<p class="flash-ok">{{ message }}</p>{% endif %}
 {% if error %}<p class="error">{{ error }}</p>{% endif %}
 
 <div class="antiplagiat-topbar">
-  <div class="crumb"><button type="button" class="menu-toggle" id="menu-toggle" aria-label="Меню разделов">☰</button>Антиплагиат</div>
+  <div class="crumb"><button type="button" class="menu-toggle" id="menu-toggle" aria-label="Меню разделов">☰</button>Карты смыслов</div>
   <div class="antiplagiat-controls">
     <label>Программа:
       <select onchange="location.href = '/antiplagiat?program=' + this.value + '&variant={{ variant }}&cutoff={{ cutoff }}';">
