@@ -6,6 +6,7 @@
 {% if error %}<p class="error">{{ error }}</p>{% endif %}
 
 <div class="antiplagiat-topbar">
+  <div class="crumb"><button type="button" class="menu-toggle" id="menu-toggle" aria-label="Меню разделов">☰</button>Антиплагиат</div>
   <div class="antiplagiat-controls">
     <label>Программа:
       <select onchange="location.href = '/antiplagiat?program=' + this.value + '&variant={{ variant }}&cutoff={{ cutoff }}';">
@@ -74,7 +75,7 @@
   </div>
 </form>
 
-<table class="tree-table antiplagiat-table" id="tree-table">
+<div class="table-wrap"><table class="tree-table antiplagiat-table" id="tree-table">
   <thead>
     <tr>
       <th>Мероприятие / работа / этап</th>
@@ -145,7 +146,7 @@
     </tr>
     {% endif %}
   </tbody>
-</table>
+</table></div>
 
 <script>
 (function() {
