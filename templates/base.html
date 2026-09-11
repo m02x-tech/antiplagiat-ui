@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{% block title %}DevProgData{% endblock %}</title>
+  <script>
+    (function(){try{if(localStorage.getItem('theme')==='dark')document.documentElement.classList.add('dark')}catch(e){}})();
+  </script>
   <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
@@ -33,6 +36,7 @@
       <div class="user-chip">
         <span class="user-name">{{ me.username }}</span>
         <span class="role-badge {{ 'role-admin' if me.is_admin else 'role-viewer' }}">{{ 'Администратор' if me.is_admin else 'Просмотр' }}</span>
+        <button type="button" class="theme-toggle" id="theme-toggle">☾ Тёмная тема</button>
         <form method="post" action="/logout"><button type="submit">Выйти</button></form>
       </div>
       {% endif %}
@@ -60,12 +64,27 @@
         </div>
       </header>
       {% endif %}
-      {# content-bare drops the padding for the iframe section; antiplagiat
-         uses the ordinary padded content like every other page. #}
+      {# content-bare drops the padding for the two sections that fill the
+         pane with an iframe; the admin page is ordinary content. #}
       <main class="content {{ 'content-bare' if section == 'sitcentre' else '' }}">
         {% block content %}{% endblock %}
       </main>
     </div>
   </div>
+  <script>
+    (function(){
+      var btn = document.getElementById('theme-toggle');
+      if (!btn) return;
+      function label(){
+        btn.textContent = document.documentElement.classList.contains('dark') ? '☀ Светлая тема' : '☾ Тёмная тема';
+      }
+      btn.addEventListener('click', function(){
+        var dark = document.documentElement.classList.toggle('dark');
+        try { localStorage.setItem('theme', dark ? 'dark' : 'light'); } catch(e) {}
+        label();
+      });
+      label();
+    })();
+  </script>
 </body>
 </html>
