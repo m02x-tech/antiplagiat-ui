@@ -420,3 +420,352 @@ table.tree-table tr.passive td { color: var(--text-dim); }
   margin: 28px 40px;
 }
 .placeholder h2 { margin-top: 0; }
+
+/* ==== Вход и текущий пользователь ===================================== */
+.login-body {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: var(--bg);
+}
+.login-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 32px 36px;
+  width: 360px;
+  box-shadow: 0 18px 50px rgba(16, 30, 50, 0.08);
+}
+.login-title { margin: 0 0 4px; font-size: 20px; }
+.login-error { margin: 12px 0 0; }
+.login-form { display: flex; flex-direction: column; gap: 12px; margin-top: 18px; }
+.login-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+.login-form input {
+  background: var(--bg-panel);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 8px 10px;
+  font-size: 14px;
+}
+.login-submit { margin-top: 6px; padding: 9px; }
+
+.user-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: auto;
+  padding: 16px 12px;
+  border-top: 1px solid #304057;
+  font-size: 12px;
+}
+.user-name { color: var(--sidebar-text); }
+.role-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid #3b5070;
+}
+.role-badge.role-admin { color: #ffffff; background: var(--accent); border-color: var(--accent); }
+.role-badge.role-viewer { color: var(--sidebar-text); }
+.user-chip form { margin: 0; }
+.sections .user-chip button[type="submit"] {
+  background: transparent;
+  border: 1px solid #3b5070;
+  color: var(--sidebar-text);
+  font-size: 12px;
+  padding: 4px 10px;
+}
+.sections .user-chip button[type="submit"]:hover { border-color: var(--sidebar-text); color: #ffffff; background: transparent; }
+
+/* ==== Страница ошибки доступа ========================================= */
+.error-card { max-width: 640px; margin: 60px auto; text-align: center; }
+.error-code { font-size: 48px; color: var(--text-dim); margin: 0; }
+.error-message { font-size: 16px; margin: 8px 0 20px; }
+
+/* ==== Администрирование =============================================== */
+.admin-section {
+  margin: 22px 0;
+  max-width: 1100px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 18px 22px;
+}
+.admin-section h3 {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-top: 0;
+}
+
+.inline-form { display: inline; margin: 0; }
+.file-action.danger { color: var(--red); border-color: var(--border-strong); background: none; }
+.file-action.danger:hover { background: var(--red-soft); }
+.upload-form { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin: 10px 0; }
+.upload-form label.checkbox { display: flex; align-items: center; gap: 6px; color: var(--text-dim); }
+
+.cell-input { width: 90px; text-align: right; font-size: 13px; padding: 3px 6px; }
+
+.edit-pencil { text-decoration: none; opacity: 0.45; margin-left: 6px; }
+.edit-pencil:hover { opacity: 1; }
+.meta-form { max-width: 640px; display: flex; flex-direction: column; gap: 14px; }
+.meta-form label { display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: var(--text-dim); }
+.meta-form input[type="text"] { width: 100%; }
+.meta-form .hint { font-size: 12px; }
+.card-form textarea {
+  width: 100%;
+  max-width: 1000px;
+  background: var(--bg-panel);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 12px;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.run-state { line-height: 1.6; }
+.log-tail {
+  background: #101e32;
+  color: #b9c8dd;
+  border: 1px solid #263b5b;
+  border-radius: 8px;
+  padding: 12px 14px;
+  max-height: 260px;
+  overflow: auto;
+  font-family: Consolas, "Courier New", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+}
+
+/* ==== Раздел «Антиплагиат» ============================================ */
+.antiplagiat-topbar { margin-bottom: 14px; }
+.antiplagiat-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  background: var(--bg-panel);
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.antiplagiat-controls label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.antiplagiat-banner {
+  background: var(--amber-soft);
+  border: 1px solid #f0d9a8;
+  border-radius: 12px;
+  padding: 18px 22px;
+  max-width: 900px;
+}
+.antiplagiat-banner h3 { margin-top: 0; }
+
+.antiplagiat-legend {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-bottom: 14px;
+  padding: 6px 0;
+}
+.legend-item { display: inline-flex; align-items: center; gap: 5px; }
+.legend-hint { margin-left: auto; font-style: italic; color: var(--text-dim); }
+
+/* Бейджи оригинальности (пилюли) */
+.badge-pill {
+  display: inline-block;
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  vertical-align: middle;
+  border: 1px solid transparent;
+}
+.badge-orig-high { background: var(--green-soft); color: var(--green); border-color: #9adcc7; }
+.badge-orig-mid { background: var(--amber-soft); color: var(--amber); border-color: #f0d9a8; }
+.badge-orig-low { background: var(--red-soft); color: var(--red); border-color: #f2b8b5; }
+.badge-orig-none { background: #eef1f6; color: var(--text-dim); border-color: #dde3ec; }
+.badge-orig-warn {
+  display: inline-block;
+  color: var(--amber);
+  font-size: 14px;
+  font-weight: bold;
+  margin-left: 4px;
+  vertical-align: middle;
+  cursor: help;
+}
+
+.triplet-info { color: var(--text-dim); font-size: 12px; margin-left: 6px; }
+
+.btn-leaf-toggle {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  font-size: 11px;
+  padding: 2px 8px;
+  margin-left: 8px;
+  cursor: pointer;
+}
+.btn-leaf-toggle:hover { background: var(--accent-soft); border-color: var(--accent); }
+
+.leaf-drawer td {
+  padding: 14px 18px !important;
+  background: #f7f9fc;
+  border-bottom: 2px solid var(--border);
+}
+.drawer-loading { color: var(--text-dim); font-style: italic; padding: 8px; }
+
+.documents-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 6px 0;
+  background: var(--bg-panel);
+}
+.documents-table th {
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  padding: 8px 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  background: #f7f9fc;
+}
+.documents-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid #edf1f7;
+  vertical-align: middle;
+}
+.doc-link { text-decoration: none; color: var(--text); }
+.doc-link:hover { color: var(--accent); text-decoration: underline; }
+
+/* Карточка документа */
+.doc-card-header {
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+.doc-card-header h2 { margin-bottom: 6px; }
+.doc-card-meta { font-size: 13px; color: var(--text-dim); }
+
+.doc-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.metric-box {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 18px;
+}
+.metric-title { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+.metric-value { margin-bottom: 6px; }
+.metric-sub { font-size: 12px; color: var(--text-dim); }
+.metric-actions { display: flex; gap: 8px; margin-top: 4px; flex-wrap: wrap; }
+
+.doc-section { margin: 24px 0; }
+.doc-section h3 {
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+  margin-bottom: 12px;
+}
+
+.dir-tag {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  margin-right: 4px;
+  border: 1px solid transparent;
+}
+.dir-donor-older { background: var(--green-soft); color: var(--green); border-color: #9adcc7; }
+.dir-src-older { background: var(--amber-soft); color: var(--amber); border-color: #f0d9a8; }
+.dir-undated { background: #eef1f6; color: var(--text-dim); border-color: #dde3ec; }
+
+.passages-list { display: flex; flex-direction: column; gap: 14px; }
+.passage-card {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 14px 18px;
+}
+.passage-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.passage-title { color: var(--text); }
+.passage-source { color: var(--text-dim); font-size: 12px; }
+.passage-snippet {
+  margin: 0;
+  padding: 10px 14px;
+  background: var(--bg-input);
+  border-left: 3px solid var(--accent);
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.55;
+  border-radius: 0 8px 8px 0;
+  white-space: pre-wrap;
+}
+.unattached-row td {
+  background: #fffaf0;
+  border-top: 1px dashed var(--border-strong);
+}
+
+/* Ослабление типовых пассажей и кратность доноров */
+.passage-card.passage-dimmed,
+.passage-card.passage-typical {
+  opacity: 0.7;
+  border-style: dashed;
+  border-color: var(--border-strong);
+  background: #fafbfd;
+}
+.passage-card.passage-dimmed:hover,
+.passage-card.passage-typical:hover {
+  opacity: 1;
+  background: var(--bg-panel);
+}
+.passage-card.passage-excluded {
+  opacity: 0.45;
+  border-style: dotted;
+  border-color: var(--border-strong);
+}
+.badge-typical-pill { background: #eef1f6; color: var(--text-dim); border: 1px solid #dde3ec; }
+.badge-unique-pill { background: var(--red-soft); color: var(--red); border: 1px solid #f2b8b5; }
+.passage-multiplicity-bar { margin: 4px 0 8px 0; font-size: 12px; color: var(--text-dim); }
+.k-switcher-panel {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin: 14px 0 20px 0;
+  padding: 12px 16px;
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.k-switcher-panel label { font-weight: 600; font-size: 13px; color: var(--text); }
