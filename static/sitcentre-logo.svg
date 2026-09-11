@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" role="img" aria-label="Ситуационный центр">
+  <title>Ситуационный центр</title>
+  <rect x="0" y="97.64" width="30" height="22.36" rx="3.2" fill="#ABB4C5"/>
+  <rect x="0" y="72.85" width="30" height="22.09" rx="3.2" fill="#39B34B"/>
+  <rect x="0" y="57.87" width="30" height="12.27" rx="3.2" fill="#724796"/>
+  <rect x="45" y="88.91" width="30" height="31.09" rx="3.2" fill="#ABB4C5"/>
+  <rect x="45" y="48.85" width="30" height="37.36" rx="3.2" fill="#39B34B"/>
+  <rect x="45" y="28.69" width="30" height="17.45" rx="3.2" fill="#724796"/>
+  <rect x="90" y="84.00" width="30" height="36.00" rx="3.2" fill="#ABB4C5"/>
+  <rect x="90" y="28.94" width="30" height="52.36" rx="3.2" fill="#39B34B"/>
+  <rect x="90" y="0.05" width="30" height="26.18" rx="3.2" fill="#724796"/>
+</svg>

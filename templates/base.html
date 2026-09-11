@@ -21,14 +21,17 @@
        where the programme tabs would mean nothing. #}
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <nav class="sections" id="sections-nav">
-      <div class="brand"><div class="logo">◈</div><div class="brand-name">DevProgData<small>ПОРТФЕЛЬ НАУЧНЫХ ПРОГРАММ</small></div></div>
+      <div class="brand">
+        <img class="logo" src="/static/sitcentre-logo.svg" alt="" width="120" height="120">
+        <div class="brand-name">СИТУАЦИОННЫЙ ЦЕНТР</div>
+      </div>
       <div class="navlabel">РАЗДЕЛЫ</div>
       <a class="section {{ 'active' if section == 'sitcentre' else '' }}"
-         href="/sitcentre">Ситуационный центр</a>
+         href="/sitcentre">Университет</a>
       <a class="section {{ 'active' if section == 'programs' and active_tab != 'admin' else '' }}"
          href="/{{ program.slug if program else 'ntic' }}/tree">Программы развития</a>
       <a class="section {{ 'active' if section == 'antiplagiat' else '' }}"
-         href="/antiplagiat">Антиплагиат</a>
+         href="/antiplagiat">Карты смыслов</a>
       {% if me and me.is_admin %}
       <a class="section {{ 'active' if active_tab == 'admin' else '' }}"
          href="/admin">Администрирование</a>
