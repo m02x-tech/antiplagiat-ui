@@ -65,7 +65,11 @@
     {% macro render_rows(rows) %}
       {% for node in rows %}
       <tr class="{{ 'no-reports' if not node.has_reports else '' }} {{ 'italic' if node.italic else '' }}"
-          data-depth="{{ node.depth }}" data-has-children="{{ 1 if node.children else 0 }}" data-collapsed="0">
+          data-depth="{{ node.depth }}" data-has-children="{{ 1 if node.children else 0 }}"
+          {# Свёрнуто по умолчанию: дерево программы — это сотни строк, и
+             развёрнутым оно открывается экраном сплошного текста. Исключение —
+             активный фильтр: там показывать надо именно найденное. #}
+          data-collapsed="{{ '0' if view.filters.active else '1' }}">
         <td>
           <span class="toggle">{{ '▾' if node.children else '' }}</span>
           <span style="padding-left: {{ node.depth * 18 }}px"></span>

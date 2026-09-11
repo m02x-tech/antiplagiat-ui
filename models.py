@@ -135,6 +135,29 @@ class TreeRow:
 @dataclass
 class TreeFilters:
     query: str = ""
+    leader: str = ""
+    funding: str = ""
+    organization: str = ""
+    date_from: str = ""
+    date_to: str = ""
+
+    @property
+    def active(self) -> bool:
+        """Хоть один фильтр задан.
+
+        Дерево открывается свёрнутым, но при активном фильтре — развёрнутым:
+        показывать надо найденное, а не приглашение его искать. Свойство есть
+        в боевом server/portfolio.py, и без него витрина вела бы себя иначе,
+        чем приложение, — то есть врала бы.
+        """
+        return bool(
+            self.query
+            or self.leader
+            or self.funding
+            or self.organization
+            or self.date_from
+            or self.date_to
+        )
 
 
 @dataclass
