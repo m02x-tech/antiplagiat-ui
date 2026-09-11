@@ -60,7 +60,8 @@
 </div>
 
 <div class="doc-section">
-  <h3>Доноры заимствований ({{ card.donors | length }})</h3>
+  <h3>Доноры заимствований ({{ card.donors | length }}{% if card.total_donors > card.donors | length %} из {{ card.total_donors }}{% endif %})</h3>
+  {% if card.total_donors > card.donors | length %}<p class="hint">Показаны самые весомые. Карточка отвечает на вопрос, откуда взят текст, а не перечисляет все совпадения.</p>{% endif %}
   {% if card.donors %}
   <div class="table-wrap"><table class="documents-table">
     <thead>
@@ -107,7 +108,8 @@
 </div>
 
 <div class="doc-section">
-  <h3>Пассажи заимствований и типовых фрагментов ({{ card.passages | length }})</h3>
+  <h3>Пассажи заимствований и типовых фрагментов ({{ card.passages | length }}{% if card.total_passages > card.passages | length %} из {{ card.total_passages }}{% endif %})</h3>
+  {% if card.total_passages > card.passages | length %}<p class="hint">Показаны самые длинные: короткие совпадения почти всегда типовые.</p>{% endif %}
   <div class="passages-list">
     {% for p in card.passages %}
     {% set typical = p.donor_count >= card.unique_donor_cutoff %}
