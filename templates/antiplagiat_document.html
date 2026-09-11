@@ -1,22 +1,25 @@
-{% block title %}Карточка: {{ card.path | basename }} — {{ app_name }}{% endblock %}
 {% extends "base.html" %}
+{% block title %}Карточка: {{ card.filename }} — DevProgData{% endblock %}
 {% block content %}
 <p><a href="/antiplagiat?program={{ program.slug }}&variant={{ variant }}&cutoff={{ cutoff }}">← Назад к структуре программы</a></p>
 
 <div class="doc-card-header">
-  <h2>Карточка документа: {{ card.path | basename }}</h2>
+  <h2>Карточка документа: {{ card.filename }}</h2>
   <div class="doc-card-meta">
     Программа: <b>{{ program.title }}</b> |
-    Пункт плана: <b>{{ card.leaf or '—' }}</b> |
-    Вариант расчёта: <b>{{ variants[variant] }}</b><br>
+    Пункт плана: <b>{{ card.activity_number or '—' }}</b> |
+    Вариант расчёта: <b>{{ 'базовый' if variant == 'default' else 'без внутрипроектного глушения' }}</b><br>
     Хэш SHA256: <code>{{ card.sha256 }}</code>
   </div>
 </div>
 
 <div class="k-switcher-panel">
   <label for="k-select">Порог кратности доноров (K):</label>
-  <select id="k-select" onchange="location.href = '/antiplagiat/{{ program.slug }}/document?path={{ card.path | urlencode }}&variant={{ variant }}&cutoff={{ cutoff }}&k=' + this.value;">
-    {% for kv, kt in k_options.items() %}<option value="{{ kv }}" {{ 'selected' if kv == k }}>{{ kt }}</option>{% endfor %}
+  <select id="k-select" onchange="location.href = '/antiplagiat/{{ program.slug }}/document?path={{ card.relative_path | urlencode }}&variant={{ variant }}&cutoff={{ cutoff }}&k=' + this.value;">
+    <option value="all" {{ 'selected' if current_k == 'all' }}>Все совпадения</option>
+    <option value="3" {{ 'selected' if current_k == '3' }}>Без типовых: K = 3</option>
+    <option value="5" {{ 'selected' if current_k == '5' }}>Без типовых: K = 5</option>
+    <option value="10" {{ 'selected' if current_k == '10' }}>Без типовых: K = 10</option>
   </select>
   <span class="hint">Пересчёт процента выполняется на месте по объединению позиций слов (без пересчёта корпуса).</span>
 </div>
@@ -25,30 +28,30 @@
   <div class="metric-box">
     <div class="metric-title">Оригинальность (по словам)</div>
     <div class="metric-value">
-      {% if card.originality is not none %}
-      <span class="badge-pill badge-orig-{{ card.badge }}">{{ card.originality }}%</span>
+      {% if card.originality_pct is not none %}
+      <span class="badge-pill {{ 'badge-orig-high' if card.originality_pct >= 85 else ('badge-orig-mid' if card.originality_pct >= 65 else 'badge-orig-low') }}">{{ card.originality_pct }}%</span>
       {% else %}
       <span class="badge-pill badge-orig-none">не посчитано</span>
       {% endif %}
     </div>
-    <div class="metric-sub">Заимствовано: {{ card.borrowed_words }} из {{ card.total_words }} слов тела</div>
+    <div class="metric-sub">Заимствовано: {{ card.borrowed_words }} из {{ card.body_words }} слов тела</div>
   </div>
   <div class="metric-box">
     <div class="metric-title">Контрольная колонка (по символам)</div>
     <div class="metric-value">
-      {% if card.originality_chars is not none %}
-      <span class="badge-pill badge-orig-{{ card.badge }}">{{ card.originality_chars }}%</span>
+      {% if card.char_originality_pct is not none %}
+      <span class="badge-pill {{ 'badge-orig-high' if card.originality_pct >= 85 else ('badge-orig-mid' if card.originality_pct >= 65 else 'badge-orig-low') }}">{{ card.char_originality_pct }}%</span>
       {% else %}
       <span class="badge-pill badge-orig-none">не посчитано</span>
       {% endif %}
     </div>
-    <div class="metric-sub">Заимствовано: {{ card.borrowed_chars }} из {{ card.total_chars }} символов</div>
+    <div class="metric-sub">Заимствовано: {{ card.borrowed_chars }} из {{ card.body_chars }} символов</div>
   </div>
   <div class="metric-box">
     <div class="metric-title">Исходный файл</div>
     <div class="metric-actions">
       {% if card.file_exists %}
-      <a class="button-like" href="/antiplagiat/{{ program.slug }}/document/file?path={{ card.path | urlencode }}">Скачать</a>
+      <a class="button-like" href="/antiplagiat/{{ program.slug }}/document/file?path={{ card.relative_path | urlencode }}">Скачать</a>
       {% else %}
       <span class="hint">Файл отсутствует на диске</span>
       {% endif %}
@@ -73,33 +76,33 @@
       {% for d in card.donors %}
       <tr>
         <td>
-          <b>{{ d.program }}</b>: {{ d.path | basename }}<br>
-          <span class="hint">{{ d.path }}</span>
+          <b>{{ d.donor_program }}</b>: {{ d.donor_filename }}<br>
+          <span class="hint">{{ d.donor_relative_path }}</span>
         </td>
         <td>
-          <span class="badge-pill badge-orig-{{ d.badge }}">{{ d.share }}%</span>
-          <span class="hint">({{ d.words }} слов)</span>
+          <span class="badge-pill {{ 'badge-orig-high' if d.borrowed_pct < 15 else ('badge-orig-mid' if d.borrowed_pct < 35 else 'badge-orig-low') }}">{{ d.borrowed_pct }}%</span>
+          <span class="hint">({{ d.borrowed_words }} слов)</span>
         </td>
-        <td>{{ d.passages }}</td>
+        <td>{{ d.passage_count }}</td>
         <td>
-          {% if d.direction == 'donor_older' %}
+          {% if d.direction == 'dst_older' %}
           <span class="dir-tag dir-donor-older">Донор старше ← первоисточник</span>
           {% elif d.direction == 'src_older' %}
           <span class="dir-tag dir-src-older">Донор моложе → возможное заимствование у текущего</span>
           {% else %}
           <span class="dir-tag dir-undated">Год не установлен (без стрелки)</span>
           {% endif %}
-          <span class="hint">({{ d.years }})</span>
+          <span class="hint">({{ d.src_year or "—" }} / {{ d.dst_year or "—" }})</span>
         </td>
         <td>
-          <a class="button-like" href="/antiplagiat/{{ program.slug }}/document?path={{ d.path | urlencode }}&variant={{ variant }}&cutoff={{ cutoff }}&k={{ k }}">Карточка донора →</a>
+          <a class="button-like" href="/antiplagiat/{{ program.slug }}/document?path={{ d.donor_relative_path | urlencode }}&variant={{ variant }}&cutoff={{ cutoff }}&k={{ current_k }}">Карточка донора →</a>
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table></div>
   {% else %}
-  <p class="hint">Совпадений не найдено{% if k != 'all' %} при выбранном пороге K{% endif %}.</p>
+  <p class="hint">Совпадений не найдено{% if current_k != 'all' %} при выбранном пороге K{% endif %}.</p>
   {% endif %}
 </div>
 
@@ -107,33 +110,39 @@
   <h3>Пассажи заимствований и типовых фрагментов ({{ card.passages | length }})</h3>
   <div class="passages-list">
     {% for p in card.passages %}
-    <div class="passage-card {{ 'passage-typical' if p.typical else '' }} {{ 'passage-dimmed' if p.dimmed else '' }} {{ 'passage-excluded' if p.excluded else '' }}">
+    {% set typical = p.donor_count >= card.unique_donor_cutoff %}
+    <div class="passage-card {{ 'passage-typical passage-dimmed passage-excluded' if typical else '' }} {{ 'passage-unique' if p.donor_count == 1 else '' }}">
       <div class="passage-header">
         <div>
-          <span class="passage-title"><b>Пассаж #{{ loop.index }}</b>: {{ p.words }} слов, страницы {{ p.pages }}</span>
-          {% if p.typical %}
+          <span class="passage-title"><b>Пассаж #{{ loop.index }}</b>: {{ p.run_words }} слов, страницы {{ p.page_from }}–{{ p.page_to }}</span>
+          {% if typical %}
           <span class="badge-pill badge-typical-pill">Типовой текст</span>
           {% else %}
           <span class="badge-pill badge-orig-low">Заимствование</span>
           {% endif %}
-          {% if p.unique %}
+          {% if p.donor_count == 1 %}
           <span class="badge-pill badge-unique-pill">Уникальное совпадение</span>
           {% endif %}
         </div>
         <div class="passage-source">
-          Источник: {{ p.source_program }} /
-          {% if p.source_path %}
-          <a href="/antiplagiat/{{ program.slug }}/document?path={{ p.source_path | urlencode }}&variant={{ variant }}&cutoff={{ cutoff }}&k={{ k }}">{{ p.source_path | basename }}</a>
+          Источник: {{ p.donor_program }} /
+          {% if p.donor_relative_path %}
+          <a href="/antiplagiat/{{ program.slug }}/document?path={{ p.donor_relative_path | urlencode }}&variant={{ variant }}&cutoff={{ cutoff }}&k={{ current_k }}">{{ p.donor_filename }}</a>
           {% else %}
-          {{ p.source_name }}
+          {{ p.donor_filename }}
           {% endif %}
         </div>
       </div>
       <div class="passage-multiplicity-bar">
-        этот фрагмент есть ещё в {{ p.multiplicity }} отчётах{% if p.unique %} (уникальное совпадение){% endif %}
-        {% if p.typical %} — разделы ГОСТ, методики или стандартные формулировки{% endif %}
+        {# Согласование числительного: «в 1 отчёте», «в 2 отчётах», «в 21 отчёте».
+           Без него подпись читается как машинная и подрывает доверие к цифре. #}
+        {% set other = p.donor_count - 1 %}
+        этот фрагмент есть ещё в {{ other }}
+        {{- ' отчёте' if other % 10 == 1 and other % 100 != 11 else ' отчётах' }}
+        {%- if p.donor_count == 1 %} (уникальное совпадение){% endif %}
+        {% if typical %} — разделы ГОСТ, методики или стандартные формулировки{% endif %}
       </div>
-      <blockquote class="passage-snippet">{{ p.snippet }}</blockquote>
+      <blockquote class="passage-snippet">{{ p.text or "" }}</blockquote>
     </div>
     {% endfor %}
   </div>

@@ -320,7 +320,7 @@ def sitcentre(request: Request):
 # на этот счёт стоит отдельное предупреждение: разделы регистрируются до
 # программных маршрутов. Здесь порядок обратный, и результат тот же.
 # ----------------------------------------------------------------------
-@app.get("/{slug}", response_class=HTMLResponse)
+@app.get("/{slug}/program", response_class=HTMLResponse)
 def program_card(request: Request, slug: str):
     context = _tab_context(request, slug, "program")
     context["digest_html"] = (

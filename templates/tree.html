@@ -1,41 +1,42 @@
 {% block title %}Структура программы — {{ program.title }}{% endblock %}
 {% extends "base.html" %}
 {% block content %}
+{% set me = identity(request) %}
 <p class="hint">Красным выделены пункты без отчётных материалов. Курсивом показаны листья с финансированием не из гранта.</p>
 
 <form class="filters" method="get">
   <div class="filters-grid">
     <label class="grow">Поиск
-      <input type="search" name="q" value="{{ filters.q }}" placeholder="Номер, название или реквизиты">
+      <input type="search" name="q" value="{{ view.filters.query }}" placeholder="Номер, название или реквизиты">
     </label>
     <label>Руководитель
       <select name="leader">
         <option value="">Все руководители</option>
-        {% for l in leaders %}<option value="{{ l }}" {{ 'selected' if filters.leader == l }}>{{ l }}</option>{% endfor %}
+        {% for l in view.leaders %}<option value="{{ l }}" {{ 'selected' if view.filters.leader == l }}>{{ l }}</option>{% endfor %}
       </select>
     </label>
     <label>Источник финансирования
       <select name="funding">
         <option value="">Все источники</option>
-        {% for f in fundings %}<option value="{{ f }}" {{ 'selected' if filters.funding == f }}>{{ f }}</option>{% endfor %}
+        {% for f in view.funding_sources %}<option value="{{ f }}" {{ 'selected' if view.filters.funding == f }}>{{ f }}</option>{% endfor %}
       </select>
     </label>
     <label>Организация
       <select name="org">
         <option value="">Все организации</option>
-        {% for o in orgs %}<option value="{{ o }}" {{ 'selected' if filters.org == o }}>{{ o }}</option>{% endfor %}
+        {% for o in view.organizations %}<option value="{{ o }}" {{ 'selected' if view.filters.organization == o }}>{{ o }}</option>{% endfor %}
       </select>
     </label>
     <label>Срок с
       <select name="date_from">
         <option value="">Без ограничения</option>
-        {% for d in deadlines %}<option value="{{ d }}" {{ 'selected' if filters.date_from == d }}>{{ d }}</option>{% endfor %}
+        {% for d in view.dates %}<option value="{{ d }}" {{ 'selected' if view.filters.date_from == d }}>{{ d }}</option>{% endfor %}
       </select>
     </label>
     <label>Срок по
       <select name="date_to">
         <option value="">Без ограничения</option>
-        {% for d in deadlines %}<option value="{{ d }}" {{ 'selected' if filters.date_to == d }}>{{ d }}</option>{% endfor %}
+        {% for d in view.dates %}<option value="{{ d }}" {{ 'selected' if view.filters.date_to == d }}>{{ d }}</option>{% endfor %}
       </select>
     </label>
   </div>
@@ -44,11 +45,11 @@
     <a class="button-like" href="/{{ program.slug }}/tree">Сбросить</a>
     <button type="button" id="expand-all">Развернуть всё</button>
     <button type="button" id="collapse-all">Свернуть всё</button>
-    <span class="summary">Совпадений: {{ matched_count }} &nbsp;|&nbsp; строк с иерархией: {{ visible_count }} из {{ total_count }}</span>
+    <span class="summary">Совпадений: {{ view.direct_matches }} &nbsp;|&nbsp; строк с иерархией: {{ view.inserted_count }} из {{ view.total_nodes }}</span>
   </div>
 </form>
 
-<p class="coverage">Документы есть у {{ coverage.covered }} из {{ coverage.total }} листьев ({{ coverage.pct }}&nbsp;%)</p>
+<p class="coverage">{{ view.coverage_text }}</p>
 
 <div class="table-wrap"><table class="tree-table" id="tree-table">
   <thead>
@@ -61,25 +62,31 @@
     </tr>
   </thead>
   <tbody>
-    {% for node in tree %}
-    <tr class="{{ 'no-reports' if node.zero_reports else '' }} {{ 'italic' if node.non_grant else '' }} {{ 'passive' if node.passive else '' }}"
-        data-depth="{{ node.depth }}" data-has-children="{{ 1 if node.has_children else 0 }}" data-collapsed="0">
-      <td>
-        <span class="toggle">{{ '▾' if node.has_children else '' }}</span>
-        <span style="padding-left: {{ (node.depth - 1) * 18 }}px"></span>
-        {% if node.depth == 1 %}
-        <a class="node-title" href="/{{ program.slug }}/project/{{ node.number }}">{{ node.number }} {{ node.title }}</a>
-        {% else %}
-        <span class="node-title">{{ node.number }} {{ node.title }}</span>
-        <a class="edit-pencil" href="/{{ program.slug }}/tree/{{ node.number }}/meta" title="Карточка пункта">✎</a>
-        {% endif %}
-      </td>
-      <td>{{ node.deadline }}</td>
-      <td>{{ node.leader }}</td>
-      <td>{{ node.funding }}</td>
-      <td>{{ node.org }}</td>
-    </tr>
-    {% endfor %}
+    {% macro render_rows(rows) %}
+      {% for node in rows %}
+      <tr class="{{ 'no-reports' if not node.has_reports else '' }} {{ 'italic' if node.italic else '' }}"
+          data-depth="{{ node.depth }}" data-has-children="{{ 1 if node.children else 0 }}" data-collapsed="0">
+        <td>
+          <span class="toggle">{{ '▾' if node.children else '' }}</span>
+          <span style="padding-left: {{ node.depth * 18 }}px"></span>
+          {% if node.has_passport %}
+          <a class="node-title" href="/{{ program.slug }}/passport/{{ node.number | urlencode }}" title="Паспорт проекта">{{ node.number }} {{ node.title }}</a>
+          {% elif not node.children %}
+          <a class="node-title" href="/{{ program.slug }}/reports/{{ node.number | urlencode }}" title="Отчётные материалы">{{ node.number }} {{ node.title }}</a>
+          {% else %}
+          <span class="node-title">{{ node.number }} {{ node.title }}</span>
+          {% endif %}
+          {% if me and me.is_admin %}<a class="edit-pencil" href="/{{ program.slug }}/tree/{{ node.number | urlencode }}/meta" title="Изменить метаданные пункта">✎</a>{% endif %}
+        </td>
+        <td>{{ node.deadline }}</td>
+        <td>{{ node.leader }}</td>
+        <td>{{ node.funding }}</td>
+        <td>{{ node.organization }}</td>
+      </tr>
+      {{ render_rows(node.children) }}
+      {% endfor %}
+    {% endmacro %}
+    {{ render_rows(view.rows) }}
   </tbody>
 </table></div>
 <script src="/static/tree.js"></script>
