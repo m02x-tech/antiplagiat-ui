@@ -83,11 +83,12 @@
          переезд вкладки не ломал ссылки и закладки. #}
       {% if section == 'antiplagiat' %}
       <header class="topbar">
-        <div class="crumb"><button type="button" class="menu-toggle" aria-label="Меню разделов">☰</button>Карты смыслов &nbsp; / &nbsp; <b>{{ 'Семантический поиск' if active_tab == 'search' else 'Антиплагиат' }}</b></div>
+        <div class="crumb"><button type="button" class="menu-toggle" aria-label="Меню разделов">☰</button>Карты смыслов &nbsp; / &nbsp; <b>{{ {'search': 'Семантический поиск', 'check': 'Проверка файла'}.get(active_tab, 'Антиплагиат') }}</b></div>
         <div class="topbar-row">
           <nav class="tabs">
-            <a class="tab {{ '' if active_tab == 'search' else 'active' }}" href="/antiplagiat?program={{ program.slug if program else 'ntic' }}">Антиплагиат</a>
+            <a class="tab {{ 'active' if active_tab not in ('search', 'check') else '' }}" href="/antiplagiat?program={{ program.slug if program else 'ntic' }}">Антиплагиат</a>
             <a class="tab {{ 'active' if active_tab == 'search' else '' }}" href="/{{ program.slug if program else 'ntic' }}/search">Семантический поиск</a>
+            <a class="tab {{ 'active' if active_tab == 'check' else '' }}" href="/antiplagiat/check?program={{ program.slug if program else 'ntic' }}">Проверить файл</a>
           </nav>
           <form class="program-switch" method="get" action="#" onsubmit="return false;">
             <label for="program-select-maps">Программа</label>

@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Проверка файла — Карты смыслов{% endblock %}
+{% block content %}
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+{% if message %}<p class="flash-ok">{{ message }}</p>{% endif %}
+
+<div class="doc-section">
+  <h3>Проверить свой файл</h3>
+  <p class="hint">
+    Документ сравнивается с корпусом отчётности: ищутся дословные совпадения
+    длиной от {{ 16 }} слов подряд. Файл никуда не сохраняется — он читается в
+    память, проверяется и забывается.
+  </p>
+  <form method="post" action="/antiplagiat/check" enctype="multipart/form-data" class="upload-form">
+    <input type="file" name="file" required accept=".pdf,.docx,.pptx,.txt,.md">
+    <label>Искать
+      <select name="scope">
+        <option value="all">во всём корпусе</option>
+        <option value="program">только в программе {{ program.title }}</option>
+      </select>
+    </label>
+    <input type="hidden" name="program" value="{{ program.slug }}">
+    <button type="submit">Проверить</button>
+    <span class="hint">Принимаются {{ extensions }}, до {{ max_mb }} МБ.</span>
+  </form>
+</div>
+
+{% if result %}
+<div class="doc-metrics-grid">
+  <div class="metric-box">
+    <div class="metric-title">Оригинальность</div>
+    <div class="metric-value">
+      {% set pct = result.originality_pct %}
+      <span class="badge-pill {{ 'badge-orig-high' if pct >= 85 else ('badge-orig-mid' if pct >= 65 else 'badge-orig-low') }}">{{ pct | round(1) }}%</span>
+    </div>
+    <div class="metric-sub">Совпало {{ result.borrowed_words }} из {{ result.body_words }} слов</div>
+  </div>
+  <div class="metric-box">
+    <div class="metric-title">Файл</div>
+    <div class="metric-value" style="font-size: 15px;">{{ filename }}</div>
+    <div class="metric-sub">Проверено документов корпуса: {{ result.candidates_seen }}</div>
+  </div>
+</div>
+
+{# Оговорка не украшение: сравнение идёт не со всем корпусом, а с теми
+   документами, которых нашла первая ступень. Пользователь должен понимать,
+   что «совпадений нет» здесь слабее, чем «совпадений нет» на дереве. #}
+<p class="hint">
+  Сравнение шло с {{ result.candidates_seen }}
+  {{- ' документом' if result.candidates_seen % 10 == 1 and result.candidates_seen % 100 != 11 else ' документами' }}
+  корпуса, отобранными по {{ result.probes_used }} пробам из текста.
+  {%- if result.truncated %} Список кандидатов упёрся в предел: совпадений может быть больше.{% endif %}
+  Это быстрая проверка, а не полный прогон по всем 1740 отчётам.
+</p>
+
+<div class="doc-section">
+  <h3>Совпало с документами ({{ result.matches | length }})</h3>
+  {% if result.matches %}
+  <div class="table-wrap"><table class="documents-table">
+    <thead>
+      <tr><th>Документ</th><th>Программа</th><th>Пункт плана</th><th>Слов</th><th>Фрагментов</th><th>Самый длинный</th></tr>
+    </thead>
+    <tbody>
+      {% for m in result.matches %}
+      <tr>
+        <td>{{ m.file_name }}<br><span class="hint">{{ m.relative_path }}</span></td>
+        <td>{{ m.program }}</td>
+        <td>{{ m.activity_number or '—' }}</td>
+        <td>{{ m.borrowed_words }}</td>
+        <td>{{ m.passage_count }}</td>
+        <td>{{ m.longest_run }} слов</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table></div>
+  {% else %}
+  <p class="hint">Дословных совпадений от 16 слов не найдено.</p>
+  {% endif %}
+</div>
+
+{% if result.passages %}
+<div class="doc-section">
+  <h3>Найденные фрагменты ({{ result.passages | length }})</h3>
+  <div class="passages-list">
+    {% for p in result.passages[:50] %}
+    <div class="passage-card {{ 'passage-typical passage-dimmed' if p.donor_count >= 3 else '' }} {{ 'passage-unique' if p.donor_count == 1 else '' }}">
+      <div class="passage-header">
+        <div>
+          <span class="passage-title"><b>Фрагмент #{{ loop.index }}</b>: {{ p.run_words }} слов</span>
+          {% if p.donor_count >= 3 %}
+          <span class="badge-pill badge-typical-pill">Типовой текст</span>
+          {% else %}
+          <span class="badge-pill badge-orig-low">Совпадение</span>
+          {% endif %}
+        </div>
+        <div class="passage-source">Источник: {{ p.donor_program }} / {{ p.donor_relative_path.split('\\') | last }}</div>
+      </div>
+      <div class="passage-multiplicity-bar">
+        {% set other = p.donor_count - 1 %}
+        этот фрагмент есть ещё в {{ other }}
+        {{- ' отчёте' if other % 10 == 1 and other % 100 != 11 else ' отчётах' }}
+        {%- if p.donor_count >= 3 %} — скорее типовой текст, чем заимствование{% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}
+{% endif %}
+{% endblock %}
